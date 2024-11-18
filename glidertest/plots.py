@@ -939,38 +939,38 @@ def plot_hysteresis(ds, var='DOXY', v_res=1, perct_err=2, ax=None):
     """
     varG, profG, depthG = utilities.construct_2dgrid(ds.PROFILE_NUMBER, ds.DEPTH, ds[var], 1, v_res)
     df, diff, err, rms = tools.compute_hyst_stat(ds, var=var, v_res=v_res)
-
-    if ax is None:
-        fig = plt.figure(figsize=(14, 10))
-        force_plot = True
-    else:
-        fig = plt.gcf()
-        force_plot = False
-    gs = fig.add_gridspec(2, 3)
-    # open axes/subplots
-    ax = []
-    ax.append(fig.add_subplot(gs[0, 0]))
-    ax.append(fig.add_subplot(gs[0, 1]))
-    ax.append(fig.add_subplot(gs[0, 2]))
-    ax.append(fig.add_subplot(gs[1, :]))
-    ax[0].plot(df.climb, df.depth, label='Dive')
-    ax[0].plot(df.dive, df.depth, label='Climb')
-    ax[0].legend()
-    ax[1].plot(diff, df.depth)
-    ax[2].plot(err, df.depth)
-    ax[2].axvline(perct_err, c='red')
-    [a.grid() for a in ax]
-    [a.invert_yaxis() for a in ax]
-    ax[0].set_ylabel('Depth (m)')
-    ax[0].set_xlabel(f'{var} concentration \n({ds[var].units})')
-    ax[1].set_xlabel(f'Absolute difference between mean dive and climb \n({ds[var].units})')
-    ax[2].set_xlabel('Percentage error between up and downcast \n(%)')
-    c = ax[3].pcolor(profG[:-1, :], depthG[:-1, :], np.diff(varG, axis=0),
-                     vmin=np.nanpercentile(np.diff(varG, axis=0), 0.5),
-                     vmax=np.nanpercentile(np.diff(varG, axis=0), 99.5), cmap='seismic')
-    plt.colorbar(c, ax=ax[3], label=f'Difference between up and downcast \n({ds[var].units})', fraction=0.05)
-    ax[3].set(ylabel='Depth (m)', xlabel='Profile number')
-    fig.suptitle(var, y=0.94)
-    if force_plot:
-        plt.show()
+    with plt.style.context(glidertest_style_file):
+        if ax is None:
+            fig = plt.figure(figsize=(14, 10))
+            force_plot = True
+        else:
+            fig = plt.gcf()
+            force_plot = False
+        gs = fig.add_gridspec(2, 3)
+        # open axes/subplots
+        ax = []
+        ax.append(fig.add_subplot(gs[0, 0]))
+        ax.append(fig.add_subplot(gs[0, 1]))
+        ax.append(fig.add_subplot(gs[0, 2]))
+        ax.append(fig.add_subplot(gs[1, :]))
+        ax[0].plot(df.climb, df.depth, label='Dive')
+        ax[0].plot(df.dive, df.depth, label='Climb')
+        ax[0].legend()
+        ax[1].plot(diff, df.depth)
+        ax[2].plot(err, df.depth)
+        ax[2].axvline(perct_err, c='red')
+        [a.grid() for a in ax]
+        [a.invert_yaxis() for a in ax]
+        ax[0].set_ylabel('Depth (m)')
+        ax[0].set_xlabel(f'{var} concentration \n({ds[var].units})')
+        ax[1].set_xlabel(f'Absolute difference between mean dive and climb \n({ds[var].units})')
+        ax[2].set_xlabel('Percentage error between up and downcast \n(%)')
+        c = ax[3].pcolor(profG[:-1, :], depthG[:-1, :], np.diff(varG, axis=0),
+                         vmin=np.nanpercentile(np.diff(varG, axis=0), 0.5),
+                         vmax=np.nanpercentile(np.diff(varG, axis=0), 99.5), cmap='seismic')
+        plt.colorbar(c, ax=ax[3], label=f'Difference between up and downcast \n({ds[var].units})', fraction=0.05)
+        ax[3].set(ylabel='Depth (m)', xlabel='Profile number')
+        fig.suptitle(var, y=0.94)
+        if force_plot:
+            plt.show()
     return fig, ax
