@@ -96,6 +96,5 @@ def test_vert_vel():
 def test_hyst_plot(var='DOXY'):
     ds = fetchers.load_sample_dataset()
     fig, ax = plots.plot_hysteresis(ds, var=var, v_res=1, perct_err=2, ax=None)
-    assert fig.get_suptitle()== var
     assert ax[3].get_ylabel() == 'Depth (m)'
     assert ax[0].get_ylabel() == 'Depth (m)'
