@@ -1,11 +1,9 @@
-name: Test documentation build
+name: Deploy Documentation
 
 on:
-  pull_request:
-    paths:
-      - '**.py'
-      - '**.ipynb'
-      - '**.rst'
+  push:
+    branches:
+      - main
 
 jobs:
   build-docs:
@@ -43,3 +41,11 @@ jobs:
         pushd docs
         make clean html 
         popd
+
+    - name: Deploy
+      uses: peaceiris/actions-gh-pages@v4
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: docs/build/html
+
+
