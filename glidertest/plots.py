@@ -972,7 +972,7 @@ def plot_hysteresis(ds, var='DOXY', v_res=1, perct_err=2, ax=None):
         ax[0].set_xlabel(f'{var} concentration $=mean$ \n({ds[var].units})')
         ax[1].set_xlabel(f'Absolute difference = |$\Delta$| \n({ds[var].units})')
         ax[2].set_xlabel('Percent error = |$\Delta$|/$mean$ \n(%)')
-        for ax1 in ax:
+        for ax1 in ax[:-1]:
             ax1.xaxis.set_label_position('top')
         c = ax[3].pcolor(profG[:-1, :], depthG[:-1, :], np.diff(varG, axis=0),
                          vmin=np.nanpercentile(np.diff(varG, axis=0), 0.5),
