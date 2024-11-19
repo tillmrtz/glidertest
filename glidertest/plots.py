@@ -16,6 +16,8 @@ import os
 
 dir = os.path.dirname(os.path.realpath(__file__))
 glidertest_style_file = f"{dir}/glidertest.mplstyle"
+full_width = 14
+half_width = 6.75
 
 def plot_updown_bias(df: pd.DataFrame, ax: plt.Axes = None, xlabel='Temperature [C]', **kw: dict, ) -> tuple({plt.Figure, plt.Axes}):
     """
@@ -104,7 +106,7 @@ def plot_basic_vars(ds: xr.Dataset, v_res=1, start_prof=0, end_prof=-1):
     with plt.style.context(glidertest_style_file):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=RuntimeWarning)
-            fig, ax = plt.subplots(1, 2)
+            fig, ax = plt.subplots(1, 2, figsize=(half_width, half_width*.85))
             ax1 = ax[0].twiny()
             ax2 = ax[0].twiny()
             ax2.spines["top"].set_position(("axes", 1.2))
@@ -115,26 +117,30 @@ def plot_basic_vars(ds: xr.Dataset, v_res=1, start_prof=0, end_prof=-1):
             ax1.axhline(halo, linestyle='dashed', c='red')
             ax2.axhline(pycno, linestyle='dashed', c='black')
 
-            ax[0].set(xlabel=f'Average Temperature [C] \nbetween profile {start_prof} and {end_prof}', ylabel='Depth (m)')
+            ax[0].set(xlabel=f'Temperature [C]', ylabel='Depth (m)')
             ax[0].tick_params(axis='x', colors='blue')
             ax[0].xaxis.label.set_color('blue')
             ax1.spines['bottom'].set_color('blue')
-            ax1.set(xlabel=f'Average Salinity [PSU] \nbetween profile {start_prof} and {end_prof}')
+            ax1.set(xlabel=f'Salinity [PSU]')
             ax1.xaxis.label.set_color('red')
             ax1.spines['top'].set_color('red')
             ax1.tick_params(axis='x', colors='red')
             ax2.spines['bottom'].set_color('black')
-            ax2.set(xlabel=f'Average Density [kg m-3] \nbetween profile {start_prof} and {end_prof}')
+            ax2.set(xlabel=f'Density [kg m-3]')
             ax2.xaxis.label.set_color('black')
             ax2.spines['top'].set_color('black')
             ax2.tick_params(axis='x', colors='black')
+
+            # Add text annotation to the right, outside of the plot
+            ax2.text(1.2, 1.25, f'Averaged profiles {start_prof}-{end_prof}', transform=ax2.transAxes, 
+                     verticalalignment='center', horizontalalignment='left', rotation=0, fontsize=12, bbox=dict(facecolor='white', alpha=0.5))
 
             if 'CHLA' in ds.variables:
                 chlaG, profG, depthG = utilities.construct_2dgrid(ds.PROFILE_NUMBER, ds.DEPTH, ds.CHLA, p, z)
                 chlaG = chlaG[start_prof:end_prof, :]
                 ax2_1 = ax[1].twiny()
                 ax2_1.plot(np.nanmean(chlaG, axis=0), depthG[0, :], c='green')
-                ax2_1.set(xlabel=f'Average Chlorophyll-a [mg m-3] \nbetween profile {start_prof} and {end_prof}')
+                ax2_1.set(xlabel=f'Chlorophyll-a [mg m-3]')
                 ax2_1.xaxis.label.set_color('green')
                 ax2_1.spines['top'].set_color('green')
                 ax2_1.tick_params(axis='x', colors='green')
@@ -145,14 +151,14 @@ def plot_basic_vars(ds: xr.Dataset, v_res=1, start_prof=0, end_prof=-1):
                 oxyG, profG, depthG = utilities.construct_2dgrid(ds.PROFILE_NUMBER, ds.DEPTH, ds.DOXY, p, z)
                 oxyG = oxyG[start_prof:end_prof, :]
                 ax[1].plot(np.nanmean(oxyG, axis=0), depthG[0, :], c='orange')
-                ax[1].set(xlabel=f'Average Oxygen [mmol m-3] \nbetween profile {start_prof} and {end_prof}')
+                ax[1].set(xlabel=f'Oxygen [mmol m-3]')
                 ax[1].xaxis.label.set_color('orange')
                 ax[1].spines['top'].set_color('orange')
                 ax[1].tick_params(axis='x', colors='orange')
                 ax[1].spines['bottom'].set_color('orange')
             else:
                 ax[1].text(0.3, 0.5, 'Oxygen data unavailable', va='top', transform=ax[1].transAxes)
-            [a.set_ylim(depthG.max() + 10, -5) for a in ax]
+            [a.set_ylim(depthG.max(), 0) for a in ax]
             [a.grid() for a in ax]
             plt.show()
     return fig, ax
@@ -202,7 +208,7 @@ def process_optics_assess(ds, var='CHLA'):
     with plt.style.context(glidertest_style_file):
         ax = sns.regplot(data=ds, x=np.arange(0, len(bottom_opt_data)), y=bottom_opt_data,
                          scatter_kws={"color": "grey"},
-                         line_kws={"color": "red", "label": "y={0:.8f}x+{1:.5f}".format(slope, intercept)},
+                         line_kws={"color": "red", "label": "y={0:.8f} x+{1:.5f}".format(slope, intercept)},
                          )
         ax.legend(loc=2)
         ax.grid()
@@ -408,9 +414,10 @@ def plot_prof_monotony(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict, ) -> tup
             fig = plt.gcf()
 
         ax[0].plot(ds.TIME, ds.PROFILE_NUMBER)
-        ax[0].set(ylabel='Profile_Number')
+        ylabel = ds.PROFILE_NUMBER.attrs.get('long_name', 'Profile Number')
+        ax[0].set(ylabel=ylabel)
         if len(np.where((np.diff(ds.PROFILE_NUMBER) != 0) & (np.diff(ds.PROFILE_NUMBER) != 1))[0]) == 0:
-            ax[1].text(0.2, 0.5, 'Data in monotonically increasing and no issues can be observed',
+            ax[1].text(0.2, 0.5, 'Data are monotonically increasing - no issues identified',
                        transform=ax[1].transAxes)
         else:
             ax[1].scatter(ds.TIME[np.where((np.diff(ds.PROFILE_NUMBER) != 0) & (np.diff(ds.PROFILE_NUMBER) != 1))],
@@ -510,7 +517,7 @@ def plot_grid_spacing(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict) -> tuple(
     utilities._check_necessary_variables(ds, ['TIME', 'DEPTH'])
     with plt.style.context(glidertest_style_file):
         if ax is None:
-            fig, ax = plt.subplots(1, 2)
+            fig, ax = plt.subplots(1, 2, figsize=(full_width, full_width/2))
         else:
             fig = plt.gcf()
         # Set font sizes for all annotations
@@ -886,7 +893,7 @@ def plot_combined_velocity_profiles(ds_out_dives: xr.Dataset, ds_out_climbs: xr.
     w_lower_climbs = ds_out_climbs.w_lower.values * conv_factor
     w_upper_climbs = ds_out_climbs.w_upper.values * conv_factor
     with plt.style.context(glidertest_style_file):
-        fig, ax = plt.subplots(1, 1)
+        fig, ax = plt.subplots(1, 1, figsize=(half_width, half_width * .9))
 
         ax.tick_params(axis='both', which='major')
 
