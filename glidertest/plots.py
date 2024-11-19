@@ -977,7 +977,7 @@ def plot_hysteresis(ds, var='DOXY', v_res=1, perct_err=2, ax=None):
         c = ax[3].pcolor(profG[:-1, :], depthG[:-1, :], np.diff(varG, axis=0),
                          vmin=np.nanpercentile(np.diff(varG, axis=0), 0.5),
                          vmax=np.nanpercentile(np.diff(varG, axis=0), 99.5), cmap='seismic')
-        plt.colorbar(c, ax=ax[3], label=f'Difference between up and downcast \n({ds[var].units})', fraction=0.05)
+        plt.colorbar(c, ax=ax[3], label=f'Difference dive-climb \n({ds[var].units})', fraction=0.05)
         ax[3].set(ylabel='Depth (m)', xlabel='Profile number')
         fig.suptitle(var, y=.98)
         if force_plot:
