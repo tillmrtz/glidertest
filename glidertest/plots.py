@@ -969,15 +969,17 @@ def plot_hysteresis(ds, var='DOXY', v_res=1, perct_err=2, ax=None):
         [a.grid() for a in ax]
         [a.invert_yaxis() for a in ax]
         ax[0].set_ylabel('Depth (m)')
-        ax[0].set_xlabel(f'{var} concentration \n({ds[var].units})')
-        ax[1].set_xlabel(f'Absolute difference between mean dive and climb \n({ds[var].units})')
-        ax[2].set_xlabel('Percentage error between up and downcast \n(%)')
+        ax[0].set_xlabel(f'{var} concentration $=mean$ \n({ds[var].units})')
+        ax[1].set_xlabel(f'Absolute difference = |$\Delta$| \n({ds[var].units})')
+        ax[2].set_xlabel('Percent error = |$\Delta$|/$mean$ \n(%)')
+        for ax1 in ax:
+            ax1.xaxis.set_label_position('top')
         c = ax[3].pcolor(profG[:-1, :], depthG[:-1, :], np.diff(varG, axis=0),
                          vmin=np.nanpercentile(np.diff(varG, axis=0), 0.5),
                          vmax=np.nanpercentile(np.diff(varG, axis=0), 99.5), cmap='seismic')
         plt.colorbar(c, ax=ax[3], label=f'Difference between up and downcast \n({ds[var].units})', fraction=0.05)
         ax[3].set(ylabel='Depth (m)', xlabel='Profile number')
-        fig.suptitle(var, y=0.94)
+        fig.suptitle(var, y=.98)
         if force_plot:
             plt.show()
     return fig, ax
