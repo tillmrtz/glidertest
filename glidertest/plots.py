@@ -618,21 +618,31 @@ def plot_ts(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict) -> tuple({plt.Figur
     utilities._check_necessary_variables(ds, ['DEPTH', 'LONGITUDE', 'LATITUDE', 'PSAL', 'TEMP'])
     with plt.style.context(glidertest_style_file):
         if ax is None:
-            fig, ax = plt.subplots(1, 3)
+            fig= plt.figure()
+            force_plot = True
         else:
             fig = plt.gcf()
+            force_plot = False
         # Set font sizes for all annotations
         num_bins = 30
 
+        gs = fig.add_gridspec(2, 2, width_ratios=(1, 1), height_ratios=(1, 1),
+                              left=0.1, right=0.9, bottom=0.1, top=0.9,
+                              wspace=0.03, hspace=0.03)
+        # Create the Axes
+        ax = fig.add_subplot(gs[0, 1])
+        ax_histy = fig.add_subplot(gs[0, 0], sharey=ax)
+        ax_histx = fig.add_subplot(gs[1, 1], sharex=ax)
+        # Draw the scatter plot and marginals.
         temp_orig = ds.TEMP.values
         sal_orig = ds.PSAL.values
 
         # Reduce both to where both are finite
-        temp = temp_orig[np.isfinite(temp_orig)&np.isfinite(sal_orig)]
-        sal = sal_orig[np.isfinite(sal_orig)&np.isfinite(temp_orig)]
-        depth = ds.DEPTH[np.isfinite(sal_orig)&np.isfinite(temp_orig)]
-        long = ds.LONGITUDE[np.isfinite(sal_orig)&np.isfinite(temp_orig)]
-        lat = ds.LATITUDE[np.isfinite(sal_orig)&np.isfinite(temp_orig)]
+        temp = temp_orig[np.isfinite(temp_orig) & np.isfinite(sal_orig)]
+        sal = sal_orig[np.isfinite(sal_orig) & np.isfinite(temp_orig)]
+        depth = ds.DEPTH[np.isfinite(sal_orig) & np.isfinite(temp_orig)]
+        long = ds.LONGITUDE[np.isfinite(sal_orig) & np.isfinite(temp_orig)]
+        lat = ds.LATITUDE[np.isfinite(sal_orig) & np.isfinite(temp_orig)]
 
         SA = gsw.SA_from_SP(sal, depth, long, lat)
         CT = gsw.CT_from_t(SA, temp, depth)
@@ -644,62 +654,56 @@ def plot_ts(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict) -> tuple({plt.Figur
         print('Temperature and Salinity values have been filtered to the middle 99% of values.')
 
         # Calculate density to add contours
-        xi = np.linspace(SA_filtered.values.min()-.2, SA_filtered.values.max()+.2, 100)
-        yi = np.linspace(CT_filtered.values.min()-.2, CT_filtered.values.max()+.2, 100)
+        xi = np.linspace(SA_filtered.values.min() - .2, SA_filtered.values.max() + .2, 100)
+        yi = np.linspace(CT_filtered.values.min() - .2, CT_filtered.values.max() + .2, 100)
         xi, yi = np.meshgrid(xi, yi)
         zi = gsw.sigma0(xi, yi)
 
         # Temperature histogram
-        ax[0].hist(CT_filtered, bins=num_bins, **kw)
-        ax[0].set_xlabel('Conservative Temperature (°C)')
-        ax[0].set_ylabel('Frequency')
-        ax[0].set_title('Histogram of Temperature')
-        ax[0].set_xlim(CT_filtered.min(), CT_filtered.max())
+        ax_histy.hist(CT_filtered, bins=num_bins, orientation="horizontal", **kw)
+        ax_histy.set_ylabel('Conservative Temperature (°C)')
+        ax_histy.set_xlabel('Frequency', rotation="horizontal")
+        ax_histy.invert_xaxis()
 
         # Salinity histogram
-        ax[1].hist(SA_filtered, bins=num_bins, **kw)
-        ax[1].set_xlabel('Absolute Salinity ( )')
-        ax[1].set_ylabel('Frequency')
-        ax[1].set_title('Histogram of Salinity')
-        ax[1].set_xlim(SA_filtered.min(), SA_filtered.max())
+        ax_histx.hist(SA_filtered, bins=num_bins, **kw)
+        ax_histx.set_xlabel('Absolute Salinity ( )')
+        ax_histx.set_ylabel('Frequency', rotation="vertical")
+        ax_histx.yaxis.set_label_position("right")
+        ax_histx.yaxis.tick_right()
+        ax_histx.invert_yaxis()
+
+        for tick in ax.xaxis.get_major_ticks():
+            tick.tick1line.set_visible(False)
+            tick.tick2line.set_visible(False)
+            tick.label1.set_visible(False)
+            tick.label2.set_visible(False)
+        for tick in ax.yaxis.get_major_ticks():
+            tick.tick1line.set_visible(False)
+            tick.tick2line.set_visible(False)
+            tick.label1.set_visible(False)
+            tick.label2.set_visible(False)
 
         # 2-d T-S histogram
-        h = ax[2].hist2d(SA_filtered, CT_filtered, bins=num_bins, cmap='viridis', norm=mcolors.LogNorm(), **kw)
-        ax[2].contour(xi, yi, zi, colors='black', alpha=0.5, linewidths=0.5)
-        ax[2].clabel(ax[2].contour(xi, yi, zi, colors='black', alpha=0.5, linewidths=0.5), inline=True)
-        cbar = plt.colorbar(h[3], ax=ax[2])
+        h = ax.hist2d(SA_filtered, CT_filtered, bins=num_bins, cmap='viridis', norm=mcolors.LogNorm(), **kw)
+        ax.contour(xi, yi, zi, colors='black', alpha=0.5, linewidths=0.5)
+        ax.clabel(ax.contour(xi, yi, zi, colors='black', alpha=0.5, linewidths=0.5), inline=True)
+        cb_ax = fig.add_axes([.91, 0.52, .04, .37])
+        cbar = fig.colorbar(h[3], orientation='vertical', cax=cb_ax)
         cbar.set_label('Log Counts')
-        ax[2].set_xlabel('Absolute Salinity ( )')
-        ax[2].set_ylabel('Conservative Temperature (°C)')
-        ax[2].set_title('2D Histogram \n (Log Scale)')
+        ax.set_title('2D Histogram \n (Log Scale)')
         # Set x-limits based on salinity plot and y-limits based on temperature plot
-        ax[2].set_xlim(ax[1].get_xlim())
-        ax[2].set_ylim(ax[0].get_xlim())
+        ax.set_xlim(ax_histx.get_xlim())
+        ax.set_ylim(ax_histy.get_ylim())
 
         # Set font sizes for all annotations
-        for axes in ax:
+        for axes in [ax, ax_histx, ax_histy]:
             axes.tick_params(axis='both', which='major')
             axes.grid(True, which='both', linestyle='--', linewidth=0.5, color='grey')
-
-
-        # Adjust the width of ax[1] to match the size of the frame of ax[2]
-        box1 = ax[1].get_position()
-        box2 = ax[2].get_position()
-        dw = box1.width-box2.width
-        ax[1].set_position([box1.x0+dw, box1.y0, box2.width, box1.height])
-        # Adjust the height of ax[2] to match the width of ax[0]
-        box0 = ax[0].get_position()
-        dh = box0.height - box2.height
-        ax[2].set_position([box2.x0, box2.y0 - dh, box2.width, box0.width])
-        # Adjust the height of ax[2] to match the width of ax[0]
-        box0 = ax[0].get_position()
-        box2 = ax[2].get_position()
-        fig_width, fig_height = fig.get_size_inches()
-        new_height = box0.width *  fig_width / fig_height
-        ax[2].set_position([box2.x0, box2.y0, box2.width, new_height])
-        plt.show()
-
-    return fig, ax
+        if force_plot:
+            plt.show()
+        all_ax = [ax, ax_histy, ax_histx]
+    return fig, all_ax
 
 def plot_vertical_speeds_with_histograms(ds, start_prof=None, end_prof=None):
     """
