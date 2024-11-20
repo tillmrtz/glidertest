@@ -16,7 +16,7 @@ import os
 
 dir = os.path.dirname(os.path.realpath(__file__))
 glidertest_style_file = f"{dir}/glidertest.mplstyle"
-full_width = 14
+full_width = 14 #  Ok - Chiara said there might be a better way to do this
 half_width = 6.75
 
 def plot_updown_bias(df: pd.DataFrame, ax: plt.Axes = None, xlabel='Temperature [C]', **kw: dict, ) -> tuple({plt.Figure, plt.Axes}):
