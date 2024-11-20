@@ -10,7 +10,7 @@ def test_plots(start_prof=0, end_prof=100):
     ds = ds.drop_vars(['DENSITY'])
     fig, ax = plots.plot_basic_vars(ds,start_prof=start_prof, end_prof=end_prof)
     assert ax[0].get_ylabel() == 'Depth (m)'
-    assert ax[0].get_xlabel() == f'Average Temperature [C] \nbetween profile {start_prof} and {end_prof}'
+    assert ax[0].get_xlabel() == f'Temperature [C]'
 
 
 def test_up_down_bias(v_res=1, xlabel='Salinity'):

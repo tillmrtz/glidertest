@@ -17,6 +17,8 @@ import os
 dir = os.path.dirname(os.path.realpath(__file__))
 glidertest_style_file = f"{dir}/glidertest.mplstyle"
 
+
+
 def plot_updown_bias(df: pd.DataFrame, ax: plt.Axes = None, xlabel='Temperature [C]', **kw: dict, ) -> tuple({plt.Figure, plt.Axes}):
     """
     This function can be used to plot the up and downcast differences computed with the updown_bias function
@@ -38,6 +40,8 @@ def plot_updown_bias(df: pd.DataFrame, ax: plt.Axes = None, xlabel='Temperature 
     with plt.style.context(glidertest_style_file):
         if ax is None:
             fig, ax = plt.subplots()
+            third_width = fig.get_size_inches()[0] / 3.11
+            fig.set_size_inches(third_width, third_width *1.1)
             force_plot = True
         else:
             fig = plt.gcf()
@@ -105,6 +109,9 @@ def plot_basic_vars(ds: xr.Dataset, v_res=1, start_prof=0, end_prof=-1):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=RuntimeWarning)
             fig, ax = plt.subplots(1, 2)
+            # Resize to half-width
+            half_width = fig.get_size_inches()[0] / 2.07
+            fig.set_size_inches(half_width, half_width * 0.85)
             ax1 = ax[0].twiny()
             ax2 = ax[0].twiny()
             ax2.spines["top"].set_position(("axes", 1.2))
@@ -115,26 +122,30 @@ def plot_basic_vars(ds: xr.Dataset, v_res=1, start_prof=0, end_prof=-1):
             ax1.axhline(halo, linestyle='dashed', c='red')
             ax2.axhline(pycno, linestyle='dashed', c='black')
 
-            ax[0].set(xlabel=f'Average Temperature [C] \nbetween profile {start_prof} and {end_prof}', ylabel='Depth (m)')
+            ax[0].set(xlabel=f'Temperature [C]', ylabel='Depth (m)')
             ax[0].tick_params(axis='x', colors='blue')
             ax[0].xaxis.label.set_color('blue')
             ax1.spines['bottom'].set_color('blue')
-            ax1.set(xlabel=f'Average Salinity [PSU] \nbetween profile {start_prof} and {end_prof}')
+            ax1.set(xlabel=f'Salinity [PSU]')
             ax1.xaxis.label.set_color('red')
             ax1.spines['top'].set_color('red')
             ax1.tick_params(axis='x', colors='red')
             ax2.spines['bottom'].set_color('black')
-            ax2.set(xlabel=f'Average Density [kg m-3] \nbetween profile {start_prof} and {end_prof}')
+            ax2.set(xlabel=f'Density [kg m-3]')
             ax2.xaxis.label.set_color('black')
             ax2.spines['top'].set_color('black')
             ax2.tick_params(axis='x', colors='black')
+
+            # Add text annotation to the right, outside of the plot
+            ax2.text(1.2, 1.25, f'Averaged profiles {start_prof}-{end_prof}', transform=ax2.transAxes, 
+                     verticalalignment='center', horizontalalignment='left', rotation=0, fontsize=12, bbox=dict(facecolor='white', alpha=0.5))
 
             if 'CHLA' in ds.variables:
                 chlaG, profG, depthG = utilities.construct_2dgrid(ds.PROFILE_NUMBER, ds.DEPTH, ds.CHLA, p, z)
                 chlaG = chlaG[start_prof:end_prof, :]
                 ax2_1 = ax[1].twiny()
                 ax2_1.plot(np.nanmean(chlaG, axis=0), depthG[0, :], c='green')
-                ax2_1.set(xlabel=f'Average Chlorophyll-a [mg m-3] \nbetween profile {start_prof} and {end_prof}')
+                ax2_1.set(xlabel=f'Chlorophyll-a [mg m-3]')
                 ax2_1.xaxis.label.set_color('green')
                 ax2_1.spines['top'].set_color('green')
                 ax2_1.tick_params(axis='x', colors='green')
@@ -145,14 +156,14 @@ def plot_basic_vars(ds: xr.Dataset, v_res=1, start_prof=0, end_prof=-1):
                 oxyG, profG, depthG = utilities.construct_2dgrid(ds.PROFILE_NUMBER, ds.DEPTH, ds.DOXY, p, z)
                 oxyG = oxyG[start_prof:end_prof, :]
                 ax[1].plot(np.nanmean(oxyG, axis=0), depthG[0, :], c='orange')
-                ax[1].set(xlabel=f'Average Oxygen [mmol m-3] \nbetween profile {start_prof} and {end_prof}')
+                ax[1].set(xlabel=f'Oxygen [mmol m-3]')
                 ax[1].xaxis.label.set_color('orange')
                 ax[1].spines['top'].set_color('orange')
                 ax[1].tick_params(axis='x', colors='orange')
                 ax[1].spines['bottom'].set_color('orange')
             else:
                 ax[1].text(0.3, 0.5, 'Oxygen data unavailable', va='top', transform=ax[1].transAxes)
-            [a.set_ylim(depthG.max() + 10, -5) for a in ax]
+            [a.set_ylim(depthG.max(), 0) for a in ax]
             [a.grid() for a in ax]
             plt.show()
     return fig, ax
@@ -199,10 +210,12 @@ def process_optics_assess(ds, var='CHLA'):
     bottom_opt_data = ds[var].where(ds[var].DEPTH > ds.DEPTH.max() - (ds.DEPTH.max() * 0.1)).dropna(
         dim='N_MEASUREMENTS')
     slope, intercept, r_value, p_value, std_err = stats.linregress(np.arange(0, len(bottom_opt_data)), bottom_opt_data)
+
+    # Generate the plot
     with plt.style.context(glidertest_style_file):
         ax = sns.regplot(data=ds, x=np.arange(0, len(bottom_opt_data)), y=bottom_opt_data,
                          scatter_kws={"color": "grey"},
-                         line_kws={"color": "red", "label": "y={0:.8f}x+{1:.5f}".format(slope, intercept)},
+                         line_kws={"color": "red", "label": "y={0:.8f} x+{1:.5f}".format(slope, intercept)},
                          )
         ax.legend(loc=2)
         ax.grid()
@@ -301,6 +314,8 @@ def plot_quench_assess(ds: xr.Dataset, sel_var: str, ax: plt.Axes = None, start_
     with plt.style.context(glidertest_style_file):
         if ax is None:
             fig, ax = plt.subplots()
+            full_width = fig.get_size_inches()[0] 
+            fig.set_size_inches(full_width, full_width * 0.5)
         else:
             fig = plt.gcf()
 
@@ -319,6 +334,7 @@ def plot_quench_assess(ds: xr.Dataset, sel_var: str, ax: plt.Axes = None, start_
         else:
             ds_sel = ds.sel(TIME=slice(start_time, end_time))
 
+
         if len(ds_sel.TIME) == 0:
             msg = f"supplied limits start_time: {start_time} end_time: {end_time} do not overlap with dataset TIME range {str(ds.TIME.values.min())[:10]} - {str(ds.TIME.values.max())[:10]}"
             raise ValueError(msg)
@@ -333,6 +349,11 @@ def plot_quench_assess(ds: xr.Dataset, sel_var: str, ax: plt.Axes = None, start_
         for m in np.unique(sunrise):
             ax.axvline(np.unique(m), c='orange')
         ax.set_ylabel('Depth [m]')
+
+        # Set x-tick labels based on duration of the selection
+        # Could pop out as a utility plotting function?
+        utilities._time_axis_formatter(ax, ds_sel, format_x_axis=True)
+
         plt.colorbar(c, label=f'{sel_var} [{ds[sel_var].units}]')
         plt.show()
     return fig, ax
@@ -366,7 +387,9 @@ def check_temporal_drift(ds: xr.Dataset, var: str, ax: plt.Axes = None, **kw: di
             fig = plt.gcf()
 
         ax[0].scatter(mdates.date2num(ds.TIME), ds[var], s=10)
-        ax[0].xaxis.set_major_formatter(DateFormatter('%d-%b'))
+        # Set x-tick labels based on duration of the selection
+        utilities._time_axis_formatter(ax[0], ds, format_x_axis=True)
+
         ax[0].set(ylim=(np.nanpercentile(ds[var], 0.01), np.nanpercentile(ds[var], 99.99)), ylabel=var)
 
         c = ax[1].scatter(ds[var], ds.DEPTH, c=mdates.date2num(ds.TIME), s=10)
@@ -408,9 +431,10 @@ def plot_prof_monotony(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict, ) -> tup
             fig = plt.gcf()
 
         ax[0].plot(ds.TIME, ds.PROFILE_NUMBER)
+
         ax[0].set(ylabel='Profile number')
         if len(np.where((np.diff(ds.PROFILE_NUMBER) != 0) & (np.diff(ds.PROFILE_NUMBER) != 1))[0]) == 0:
-            ax[1].text(0.2, 0.5, 'Data in monotonically increasing and no issues can be observed',
+            ax[1].text(0.2, 0.5, 'Data are monotonically increasing - no issues identified',
                        transform=ax[1].transAxes)
         else:
             ax[1].scatter(ds.TIME[np.where((np.diff(ds.PROFILE_NUMBER) != 0) & (np.diff(ds.PROFILE_NUMBER) != 1))],
@@ -420,6 +444,7 @@ def plot_prof_monotony(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict, ) -> tup
         ax[1].set(ylabel='Depth (m)')
         ax[1].invert_yaxis()
         ax[1].xaxis.set_major_locator(plt.MaxNLocator(8))
+        utilities._time_axis_formatter(ax[1], ds, format_x_axis=True)
         [a.grid() for a in ax]
         plt.show()
     return fig, ax
@@ -511,6 +536,8 @@ def plot_grid_spacing(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict) -> tuple(
     with plt.style.context(glidertest_style_file):
         if ax is None:
             fig, ax = plt.subplots(1, 2)
+            # Set aspect ration of plot to be 2:1
+            fig.set_size_inches(fig.get_size_inches()[0], fig.get_size_inches()[0] / 2)
         else:
             fig = plt.gcf()
         # Set font sizes for all annotations
@@ -763,8 +790,8 @@ def plot_vertical_speeds_with_histograms(ds, start_prof=None, end_prof=None):
         ax1.set_xlabel('Time')
         ax1.set_ylabel('Vertical Velocity (cm/s)')
         ax1.legend(loc='lower left')
-        ax1.xaxis.set_major_formatter(DateFormatter('%d-%b'))
         ax1.legend(loc='lower right')
+        utilities._time_axis_formatter(ax1, ds, format_x_axis=True)
 
         # Upper right subplot for histogram of vertical velocity
         ax1_hist = axs[0, 1]
@@ -791,7 +818,7 @@ def plot_vertical_speeds_with_histograms(ds, start_prof=None, end_prof=None):
         ax2.set_xlabel('Time')
         ax2.set_ylabel('Vertical Water Speed (cm/s)')
         ax2.legend(loc='upper left')
-        ax2.xaxis.set_major_formatter(DateFormatter('%d-%b'))
+        utilities._time_axis_formatter(ax2, ds, format_x_axis=True)
 
         # Lower right subplot for histogram of vertical water speed
         ax2_hist = axs[1, 1]
@@ -887,7 +914,9 @@ def plot_combined_velocity_profiles(ds_out_dives: xr.Dataset, ds_out_climbs: xr.
     w_upper_climbs = ds_out_climbs.w_upper.values * conv_factor
     with plt.style.context(glidertest_style_file):
         fig, ax = plt.subplots(1, 1)
-
+        # Resize to half-width
+        half_width = fig.get_size_inches()[0] / 2.07
+        fig.set_size_inches(half_width, half_width * 0.9)
         ax.tick_params(axis='both', which='major')
 
         # Plot dives
@@ -962,15 +991,17 @@ def plot_hysteresis(ds, var='DOXY', v_res=1, perct_err=2, ax=None):
         [a.grid() for a in ax]
         [a.invert_yaxis() for a in ax]
         ax[0].set_ylabel('Depth (m)')
-        ax[0].set_xlabel(f'{var} concentration \n({ds[var].units})')
-        ax[1].set_xlabel(f'Absolute difference between mean dive and climb \n({ds[var].units})')
-        ax[2].set_xlabel('Percentage error between up and downcast \n(%)')
+        ax[0].set_xlabel(f'{var} concentration $=mean$ \n({ds[var].units})')
+        ax[1].set_xlabel(f'Absolute difference = |$\Delta$| \n({ds[var].units})')
+        ax[2].set_xlabel('Percent error = |$\Delta$|/$mean$ \n(%)')
+        for ax1 in ax[:-1]:
+            ax1.xaxis.set_label_position('top')
         c = ax[3].pcolor(profG[:-1, :], depthG[:-1, :], np.diff(varG, axis=0),
                          vmin=np.nanpercentile(np.diff(varG, axis=0), 0.5),
                          vmax=np.nanpercentile(np.diff(varG, axis=0), 99.5), cmap='seismic')
-        plt.colorbar(c, ax=ax[3], label=f'Difference between up and downcast \n({ds[var].units})', fraction=0.05)
+        plt.colorbar(c, ax=ax[3], label=f'Difference dive-climb \n({ds[var].units})', fraction=0.05)
         ax[3].set(ylabel='Depth (m)', xlabel='Profile number')
-        fig.suptitle(var, y=0.94)
+        fig.suptitle(var, y=.98)
         if force_plot:
             plt.show()
     return fig, ax
