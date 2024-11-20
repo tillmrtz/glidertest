@@ -623,7 +623,7 @@ def plot_ts(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict) -> tuple({plt.Figur
         else:
             fig = plt.gcf()
             force_plot = False
-        # Set font sizes for all annotations
+
         num_bins = 30
 
         gs = fig.add_gridspec(2, 2, width_ratios=(1, 1), height_ratios=(1, 1),
@@ -633,7 +633,7 @@ def plot_ts(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict) -> tuple({plt.Figur
         ax = fig.add_subplot(gs[0, 1])
         ax_histy = fig.add_subplot(gs[0, 0], sharey=ax)
         ax_histx = fig.add_subplot(gs[1, 1], sharex=ax)
-        # Draw the scatter plot and marginals.
+      
         temp_orig = ds.TEMP.values
         sal_orig = ds.PSAL.values
 
