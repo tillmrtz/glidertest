@@ -308,6 +308,8 @@ def plot_quench_assess(ds: xr.Dataset, sel_var: str, ax: plt.Axes = None, start_
     with plt.style.context(glidertest_style_file):
         if ax is None:
             fig, ax = plt.subplots()
+            full_width = fig.get_size_inches()[0] 
+            fig.set_size_inches(full_width, full_width * 0.5)
         else:
             fig = plt.gcf()
 
@@ -325,6 +327,9 @@ def plot_quench_assess(ds: xr.Dataset, sel_var: str, ax: plt.Axes = None, start_
             ds_sel = ds.sel(TIME=slice(t1,t2))
         else:
             ds_sel = ds.sel(TIME=slice(start_time, end_time))
+            start_time = ds_sel.TIME.min().values
+            end_time = ds_sel.TIME.max().values
+
 
         if len(ds_sel.TIME) == 0:
             msg = f"supplied limits start_time: {start_time} end_time: {end_time} do not overlap with dataset TIME range {str(ds.TIME.values.min())[:10]} - {str(ds.TIME.values.max())[:10]}"
@@ -340,6 +345,20 @@ def plot_quench_assess(ds: xr.Dataset, sel_var: str, ax: plt.Axes = None, start_
         for m in np.unique(sunrise):
             ax.axvline(np.unique(m), c='orange')
         ax.set_ylabel('Depth [m]')
+
+        # Set x-tick labels based on duration of the selection
+        # Could pop out as a utility plotting function?
+        if (end_time - start_time) < np.timedelta64(1, 'D'):
+            ax.xaxis.set_major_formatter(DateFormatter('%H:%M'))
+            start_date = pd.to_datetime(start_time).strftime('%Y-%b-%d')
+            end_date = pd.to_datetime(end_time).strftime('%Y-%b-%d')
+            if start_date==end_date:
+                ax.set_xlabel(f'Time [UTC] ({start_date})')
+            else:
+                ax.set_xlabel(f'Time [UTC] ({start_date} to {end_date})')
+        else:
+            ax.xaxis.set_major_formatter(DateFormatter('%d-%b'))
+
         plt.colorbar(c, label=f'{sel_var} [{ds[sel_var].units}]')
         plt.show()
     return fig, ax
