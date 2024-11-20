@@ -16,8 +16,6 @@ import os
 
 dir = os.path.dirname(os.path.realpath(__file__))
 glidertest_style_file = f"{dir}/glidertest.mplstyle"
-full_width = 14 #  Ok - Chiara said there might be a better way to do this
-half_width = 6.75
 
 def plot_updown_bias(df: pd.DataFrame, ax: plt.Axes = None, xlabel='Temperature [C]', **kw: dict, ) -> tuple({plt.Figure, plt.Axes}):
     """
@@ -106,7 +104,10 @@ def plot_basic_vars(ds: xr.Dataset, v_res=1, start_prof=0, end_prof=-1):
     with plt.style.context(glidertest_style_file):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=RuntimeWarning)
-            fig, ax = plt.subplots(1, 2, figsize=(half_width, half_width*.85))
+            fig, ax = plt.subplots(1, 2)
+            # Resize to half-width
+            half_width = fig.get_size_inches()[0] / 2.07
+            fig.set_size_inches(half_width, half_width * 0.85)
             ax1 = ax[0].twiny()
             ax2 = ax[0].twiny()
             ax2.spines["top"].set_position(("axes", 1.2))
@@ -517,7 +518,9 @@ def plot_grid_spacing(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict) -> tuple(
     utilities._check_necessary_variables(ds, ['TIME', 'DEPTH'])
     with plt.style.context(glidertest_style_file):
         if ax is None:
-            fig, ax = plt.subplots(1, 2, figsize=(full_width, full_width/2))
+            fig, ax = plt.subplots(1, 2)
+            # Set aspect ration of plot to be 2:1
+            fig.set_size_inches(fig.get_size_inches()[0], fig.get_size_inches()[0] / 2)
         else:
             fig = plt.gcf()
         # Set font sizes for all annotations
@@ -893,8 +896,10 @@ def plot_combined_velocity_profiles(ds_out_dives: xr.Dataset, ds_out_climbs: xr.
     w_lower_climbs = ds_out_climbs.w_lower.values * conv_factor
     w_upper_climbs = ds_out_climbs.w_upper.values * conv_factor
     with plt.style.context(glidertest_style_file):
-        fig, ax = plt.subplots(1, 1, figsize=(half_width, half_width * .9))
-
+        fig, ax = plt.subplots(1, 1)
+        # Resize to half-width
+        half_width = fig.get_size_inches()[0] / 2.07
+        fig.set_size_inches(half_width, half_width * 0.9)
         ax.tick_params(axis='both', which='major')
 
         # Plot dives
