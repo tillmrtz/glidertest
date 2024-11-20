@@ -17,6 +17,37 @@ import os
 dir = os.path.dirname(os.path.realpath(__file__))
 glidertest_style_file = f"{dir}/glidertest.mplstyle"
 
+def _time_axis_formatter(ax, ds, format_x_axis=True):
+    start_time = ds.TIME.min().values
+    end_time = ds.TIME.max().values
+    if (end_time - start_time) < np.timedelta64(1, 'D'):
+        formatter = DateFormatter('%H:%M')
+        locator = mdates.HourLocator(interval=2)
+        start_date = pd.to_datetime(start_time).strftime('%Y-%b-%d')
+        end_date = pd.to_datetime(end_time).strftime('%Y-%b-%d')
+        xlabel = f'Time [UTC] ({start_date})' if start_date == end_date else f'Time [UTC] ({start_date} to {end_date})'
+    elif (end_time - start_time) < np.timedelta64(7, 'D'):
+        formatter = DateFormatter('%d-%b')
+        locator = mdates.DayLocator(interval=1)
+        start_date = pd.to_datetime(start_time).strftime('%Y-%b-%d')
+        end_date = pd.to_datetime(end_time).strftime('%Y-%b-%d')
+        xlabel = f'Time [UTC] ({start_date})' if start_date == end_date else f'Time [UTC] ({start_date} to {end_date})'
+    else:
+        formatter = DateFormatter('%d-%b')
+        locator = None
+        xlabel = 'Time [UTC]'
+
+    if format_x_axis:
+        ax.xaxis.set_major_formatter(formatter)
+        if locator:
+            ax.xaxis.set_major_locator(locator)
+        ax.set_xlabel(xlabel)
+    else:
+        ax.yaxis.set_major_formatter(formatter)
+        if locator:
+            ax.yaxis.set_major_locator(locator)
+        ax.set_ylabel(xlabel)
+
 def plot_updown_bias(df: pd.DataFrame, ax: plt.Axes = None, xlabel='Temperature [C]', **kw: dict, ) -> tuple({plt.Figure, plt.Axes}):
     """
     This function can be used to plot the up and downcast differences computed with the updown_bias function
@@ -38,6 +69,8 @@ def plot_updown_bias(df: pd.DataFrame, ax: plt.Axes = None, xlabel='Temperature 
     with plt.style.context(glidertest_style_file):
         if ax is None:
             fig, ax = plt.subplots()
+            third_width = fig.get_size_inches()[0] / 3.11
+            fig.set_size_inches(third_width, third_width *1.1)
             force_plot = True
         else:
             fig = plt.gcf()
@@ -206,6 +239,8 @@ def process_optics_assess(ds, var='CHLA'):
     bottom_opt_data = ds[var].where(ds[var].DEPTH > ds.DEPTH.max() - (ds.DEPTH.max() * 0.1)).dropna(
         dim='N_MEASUREMENTS')
     slope, intercept, r_value, p_value, std_err = stats.linregress(np.arange(0, len(bottom_opt_data)), bottom_opt_data)
+
+    # Generate the plot
     with plt.style.context(glidertest_style_file):
         ax = sns.regplot(data=ds, x=np.arange(0, len(bottom_opt_data)), y=bottom_opt_data,
                          scatter_kws={"color": "grey"},
@@ -327,8 +362,6 @@ def plot_quench_assess(ds: xr.Dataset, sel_var: str, ax: plt.Axes = None, start_
             ds_sel = ds.sel(TIME=slice(t1,t2))
         else:
             ds_sel = ds.sel(TIME=slice(start_time, end_time))
-            start_time = ds_sel.TIME.min().values
-            end_time = ds_sel.TIME.max().values
 
 
         if len(ds_sel.TIME) == 0:
@@ -348,16 +381,7 @@ def plot_quench_assess(ds: xr.Dataset, sel_var: str, ax: plt.Axes = None, start_
 
         # Set x-tick labels based on duration of the selection
         # Could pop out as a utility plotting function?
-        if (end_time - start_time) < np.timedelta64(1, 'D'):
-            ax.xaxis.set_major_formatter(DateFormatter('%H:%M'))
-            start_date = pd.to_datetime(start_time).strftime('%Y-%b-%d')
-            end_date = pd.to_datetime(end_time).strftime('%Y-%b-%d')
-            if start_date==end_date:
-                ax.set_xlabel(f'Time [UTC] ({start_date})')
-            else:
-                ax.set_xlabel(f'Time [UTC] ({start_date} to {end_date})')
-        else:
-            ax.xaxis.set_major_formatter(DateFormatter('%d-%b'))
+        _time_axis_formatter(ax, ds_sel, format_x_axis=True)
 
         plt.colorbar(c, label=f'{sel_var} [{ds[sel_var].units}]')
         plt.show()
@@ -392,7 +416,9 @@ def check_temporal_drift(ds: xr.Dataset, var: str, ax: plt.Axes = None, **kw: di
             fig = plt.gcf()
 
         ax[0].scatter(mdates.date2num(ds.TIME), ds[var], s=10)
-        ax[0].xaxis.set_major_formatter(DateFormatter('%d-%b'))
+        # Set x-tick labels based on duration of the selection
+        _time_axis_formatter(ax[0], ds, format_x_axis=True)
+
         ax[0].set(ylim=(np.nanpercentile(ds[var], 0.01), np.nanpercentile(ds[var], 99.99)), ylabel=var)
 
         c = ax[1].scatter(ds[var], ds.DEPTH, c=mdates.date2num(ds.TIME), s=10)
@@ -447,6 +473,7 @@ def plot_prof_monotony(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict, ) -> tup
         ax[1].set(ylabel='Depth')
         ax[1].invert_yaxis()
         ax[1].xaxis.set_major_locator(plt.MaxNLocator(8))
+        _time_axis_formatter(ax[1], ds, format_x_axis=True)
         [a.grid() for a in ax]
         plt.show()
     return fig, ax
@@ -792,8 +819,8 @@ def plot_vertical_speeds_with_histograms(ds, start_prof=None, end_prof=None):
         ax1.set_xlabel('Time')
         ax1.set_ylabel('Vertical Velocity (cm/s)')
         ax1.legend(loc='lower left')
-        ax1.xaxis.set_major_formatter(DateFormatter('%d-%b'))
         ax1.legend(loc='lower right')
+        _time_axis_formatter(ax1, ds, format_x_axis=True)
 
         # Upper right subplot for histogram of vertical velocity
         ax1_hist = axs[0, 1]
@@ -820,7 +847,7 @@ def plot_vertical_speeds_with_histograms(ds, start_prof=None, end_prof=None):
         ax2.set_xlabel('Time')
         ax2.set_ylabel('Vertical Water Speed (cm/s)')
         ax2.legend(loc='upper left')
-        ax2.xaxis.set_major_formatter(DateFormatter('%d-%b'))
+        _time_axis_formatter(ax2, ds, format_x_axis=True)
 
         # Lower right subplot for histogram of vertical water speed
         ax2_hist = axs[1, 1]
