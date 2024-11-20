@@ -6,6 +6,8 @@ from skyfield import almanac
 from skyfield import api
 import gsw
 import warnings
+from matplotlib.dates import DateFormatter
+import matplotlib.dates as mdates
 
 
 def _check_necessary_variables(ds: xr.Dataset, vars: list):
@@ -44,7 +46,37 @@ def _calc_teos10_variables(ds):
         ds['DENSITY'] = ('N_MEASUREMENTS', gsw.rho(SA, CT, ds.DEPTH).values)
     return ds
 
+def _time_axis_formatter(ax, ds, format_x_axis=True):
+    start_time = ds.TIME.min().values
+    end_time = ds.TIME.max().values
+    if (end_time - start_time) < np.timedelta64(1, 'D'):
+        formatter = DateFormatter('%H:%M')
+        locator = mdates.HourLocator(interval=2)
+        start_date = pd.to_datetime(start_time).strftime('%Y-%b-%d')
+        end_date = pd.to_datetime(end_time).strftime('%Y-%b-%d')
+        xlabel = f'Time [UTC] ({start_date})' if start_date == end_date else f'Time [UTC] ({start_date} to {end_date})'
+    elif (end_time - start_time) < np.timedelta64(7, 'D'):
+        formatter = DateFormatter('%d-%b')
+        locator = mdates.DayLocator(interval=1)
+        start_date = pd.to_datetime(start_time).strftime('%Y-%b-%d')
+        end_date = pd.to_datetime(end_time).strftime('%Y-%b-%d')
+        xlabel = f'Time [UTC] ({start_date})' if start_date == end_date else f'Time [UTC] ({start_date} to {end_date})'
+    else:
+        formatter = DateFormatter('%d-%b')
+        locator = None
+        xlabel = 'Time [UTC]'
 
+    if format_x_axis:
+        ax.xaxis.set_major_formatter(formatter)
+        if locator:
+            ax.xaxis.set_major_locator(locator)
+        ax.set_xlabel(xlabel)
+    else:
+        ax.yaxis.set_major_formatter(formatter)
+        if locator:
+            ax.yaxis.set_major_locator(locator)
+        ax.set_ylabel(xlabel)
+        
 def construct_2dgrid(x, y, v, xi=1, yi=1):
     """
     Function to grid data
