@@ -408,7 +408,7 @@ def plot_prof_monotony(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict, ) -> tup
             fig = plt.gcf()
 
         ax[0].plot(ds.TIME, ds.PROFILE_NUMBER)
-        ax[0].set(ylabel='Profile_Number')
+        ax[0].set(ylabel='Profile number')
         if len(np.where((np.diff(ds.PROFILE_NUMBER) != 0) & (np.diff(ds.PROFILE_NUMBER) != 1))[0]) == 0:
             ax[1].text(0.2, 0.5, 'Data in monotonically increasing and no issues can be observed',
                        transform=ax[1].transAxes)
@@ -417,7 +417,7 @@ def plot_prof_monotony(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict, ) -> tup
                           ds.DEPTH[np.where((np.diff(ds.PROFILE_NUMBER) != 0) & (np.diff(ds.PROFILE_NUMBER) != 1))],
                           s=10, c='red', label='Depth at which we have issues \n with the profile number assigned')
             ax[1].legend()
-        ax[1].set(ylabel='Depth')
+        ax[1].set(ylabel='Depth (m)')
         ax[1].invert_yaxis()
         ax[1].xaxis.set_major_locator(plt.MaxNLocator(8))
         [a.grid() for a in ax]
@@ -941,7 +941,7 @@ def plot_hysteresis(ds, var='DOXY', v_res=1, perct_err=2, ax=None):
     df, diff, err, rms = tools.compute_hyst_stat(ds, var=var, v_res=v_res)
     with plt.style.context(glidertest_style_file):
         if ax is None:
-            fig = plt.figure(figsize=(14, 10))
+            fig = plt.figure()
             force_plot = True
         else:
             fig = plt.gcf()
@@ -971,6 +971,82 @@ def plot_hysteresis(ds, var='DOXY', v_res=1, perct_err=2, ax=None):
         plt.colorbar(c, ax=ax[3], label=f'Difference between up and downcast \n({ds[var].units})', fraction=0.05)
         ax[3].set(ylabel='Depth (m)', xlabel='Profile number')
         fig.suptitle(var, y=0.94)
+        if force_plot:
+            plt.show()
+    return fig, ax
+
+
+def plot_outlier_duration(ds: xr.Dataset, rolling_mean: pd.Series, overtime, std=2, ax=None):
+    """
+       Generates two plots to visualize profile durations and highlight outliers.
+       This helps identify profiles with abnormal durations by comparing the actual profile durations
+       to a rolling mean, and by visualizing the shape and depth of the selected outlier profiles.
+
+       Parameters
+       ----------
+       ds : An xarray object containing at least the variables 'TIME', 'DEPTH', and 'PROFILE_NUMBER'.
+       These are used to compute the profile durations and plot depth profiles.
+
+       rolling_mean : A series representing the rolling mean of the profile durations,
+       which is used to highlight outliers based on standard deviation.
+
+       overtime :  A list of profile numbers identified as having unusual durations.
+       These profiles are marked on the plot to highlight the outliers.
+
+       std : float, optional, default 2
+           The number of standard deviations above and below the rolling mean that will be used to define the range
+           of "normal" durations. Profiles outside this range are considered outliers.
+
+       ax :The axes object on which to plot the results. If not provided, a new figure with two subplots is created.
+
+       Returns
+       -------
+       fig : The figure containing the generated plots.
+           1. A plot showing the profile durations with the rolling mean and the range defined by the rolling mean ± `std`
+              (standard deviation). The range is highlighted in orange.
+           2. A scatter plot of the profile depths, with outlier profiles marked in red. These outliers are determined based
+              on the duration exceeding the threshold defined by the rolling mean ± `std`.
+
+       ax :  A 1x2 array of axes used for the two subplots.
+
+       Original author
+       ------
+       Chiara Monforte
+       """
+
+    with plt.style.context(glidertest_style_file):
+        if ax is None:
+            fig,ax = plt.subplots(1,2)
+            force_plot = True
+        else:
+            fig = plt.gcf()
+            force_plot = False
+
+        data = tools.compute_prof_duration(ds)
+        ax[0].plot(data['profile_num'], data['profile_duration'], label='Profile duration')
+        ax[0].plot(data['profile_num'], rolling_mean, label='Rolling mean')
+        ax[0].fill_between(data['profile_num'], rolling_mean - (np.std(rolling_mean) * std),
+                           rolling_mean + (np.std(rolling_mean) * std), color='orange',
+                           edgecolor="orange", alpha=0.5,
+                           label=f'Rolling mean ± {std} std')
+        ax[0].legend()
+        ax[0].grid()
+        ax[0].set(xlabel='Profile number', ylabel='Profile duration (min)')
+
+        ax[1].scatter(ds.TIME, ds.DEPTH, s=0.1)
+        for i in range(len(overtime)):
+            profile = ds.TIME.where(ds.PROFILE_NUMBER == overtime[i]).dropna(dim='N_MEASUREMENTS')
+            ax[1].scatter(profile.TIME, profile.DEPTH, s=0.1, c='red', label='Profiles with odd duration')
+        ax[1].invert_yaxis()
+        handles, labels = plt.gca().get_legend_handles_labels()
+        by_label = dict(zip(labels, handles))
+        ax[1].legend(by_label.values(), by_label.keys(), markerscale=8., loc='lower right')
+        ax[1].set(ylabel='Depth (m)')
+        ax[1].grid()
+        every_nth = 2
+        for n, label in enumerate(ax[1].xaxis.get_ticklabels()):
+            if n % every_nth != 0:
+                label.set_visible(False)
         if force_plot:
             plt.show()
     return fig, ax

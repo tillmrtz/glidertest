@@ -67,8 +67,15 @@ def test_temporal_drift(var='DOXY'):
 def test_profile_check():
     ds = fetchers.load_sample_dataset()
     tools.check_monotony(ds.PROFILE_NUMBER)
-    plots.plot_prof_monotony(ds)
-
+    fig, ax = plots.plot_prof_monotony(ds)
+    assert ax[0].get_ylabel() == 'Profile number'
+    assert ax[1].get_ylabel() == 'Depth (m)'
+    duration = tools.compute_prof_duration(ds)
+    rolling_mean, overtime = tools.find_outlier_duration(duration, rolling=20, std=2)
+    fig, ax = plots.plot_outlier_duration(ds, rolling_mean, overtime, std = 2)
+    assert ax[0].get_ylabel() == 'Profile duration (min)'
+    assert ax[0].get_xlabel() == 'Profile number'
+    assert ax[1].get_ylabel() == 'Depth (m)'
 
 def test_basic_statistics():
     ds = fetchers.load_sample_dataset()

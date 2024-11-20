@@ -1,4 +1,5 @@
 import numpy as np
+import pandas
 import pandas as pd
 import xarray as xr
 from scipy import stats
@@ -354,7 +355,7 @@ def quant_hysteresis(ds: xr.Dataset, var='DOXY', v_res=1):
     ----------------
     Chiara Monforte
     """
-    # utilities._check_necessary_variables(ds, ['PROFILE_NUMBER', 'DEPTH', var])
+    utilities._check_necessary_variables(ds, ['PROFILE_NUMBER', 'DEPTH', var])
     p = 1  # Horizontal resolution
     z = v_res  # Vertical resolution
     with warnings.catch_warnings():
@@ -366,7 +367,7 @@ def quant_hysteresis(ds: xr.Dataset, var='DOXY', v_res=1):
     return df
 
 
-def compute_hyst_stat(ds, var='DOXY', v_res=1):
+def compute_hyst_stat(ds: xr.Dataset, var='DOXY', v_res=1):
     """
     This function computes some basic statistics for the differences between climb and dive data
 
@@ -394,3 +395,57 @@ def compute_hyst_stat(ds, var='DOXY', v_res=1):
         err = (diff * 100) / np.nanmedian([df.dive, df.climb], axis=0)
         rms = np.sqrt(np.nanmean(abs(df.dive - df.climb) ** 2))
     return df, diff, err, rms
+
+
+def compute_prof_duration(ds:xr.Dataset):
+    """
+    This function computes some basic statistics for the differences between climb and dive data
+
+    Parameters
+    ----------
+    ds: xarray on OG1 format containing at least time and profile_number. Data should not be gridded.
+
+    Returns
+    -------
+    df: pandas dataframe containing the profile number and the duration of that profile in minutes
+
+    Original author
+    ----------------
+    Chiara  Monforte
+    """
+    utilities._check_necessary_variables(ds, ['PROFILE_NUMBER', 'TIME'])
+    deltat = ds.TIME.groupby(ds.PROFILE_NUMBER).max() - ds.TIME.groupby(ds.PROFILE_NUMBER).min()
+    deltat_min = (pd.to_timedelta(deltat).astype('timedelta64[s]') / 60).astype('int64')
+    df = pd.DataFrame(data={'profile_num': deltat.PROFILE_NUMBER, 'profile_duration': deltat_min})
+    return df
+
+def find_outlier_duration(df: pd.DataFrame, rolling=20, std=2):
+    """
+    This function computes some basic statistics for the differences between climb and dive data
+
+    Parameters
+    ----------
+    df: pandas dataframe containing the profile number and the duration of that profile in minutes
+    rolling: window size for the rolling mean
+    std: number of standard deviations to use for 'odd' profile duration
+
+    Returns
+    -------
+    The function prints a statement in case there are profiles with 'odd' duration,
+    rolling_mean: Rolling mean of profile duration computed with the set window
+    overt_prof: Profiles where the duration is above the set rolling mean with added standard deviation
+
+    Original author
+    ----------------
+    Chiara  Monforte
+    """
+
+
+    rolling_mean = df['profile_duration'].rolling(window=rolling, min_periods=1).mean()
+    overtime = np.where((df['profile_duration'] > rolling_mean + (np.std(rolling_mean) * std)) | (
+                df['profile_duration'] < rolling_mean - (np.std(rolling_mean) * std)))
+    overt_prof = df['profile_num'][overtime[0]].values
+    if len(overtime[0]) > 0:
+        print(
+            f'There are {len(overtime[0])} profiles where the duration differs by {std} standard deviations of the nearby {rolling} profiles have been detected. Further checks are recommended')
+    return rolling_mean, overt_prof
