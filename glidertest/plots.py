@@ -352,7 +352,7 @@ def plot_quench_assess(ds: xr.Dataset, sel_var: str, ax: plt.Axes = None, start_
 
         # Set x-tick labels based on duration of the selection
         # Could pop out as a utility plotting function?
-        _time_axis_formatter(ax, ds_sel, format_x_axis=True)
+        utilities._time_axis_formatter(ax, ds_sel, format_x_axis=True)
 
         plt.colorbar(c, label=f'{sel_var} [{ds[sel_var].units}]')
         plt.show()
@@ -388,7 +388,7 @@ def check_temporal_drift(ds: xr.Dataset, var: str, ax: plt.Axes = None, **kw: di
 
         ax[0].scatter(mdates.date2num(ds.TIME), ds[var], s=10)
         # Set x-tick labels based on duration of the selection
-        _time_axis_formatter(ax[0], ds, format_x_axis=True)
+        utilities._time_axis_formatter(ax[0], ds, format_x_axis=True)
 
         ax[0].set(ylim=(np.nanpercentile(ds[var], 0.01), np.nanpercentile(ds[var], 99.99)), ylabel=var)
 
@@ -444,7 +444,7 @@ def plot_prof_monotony(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict, ) -> tup
         ax[1].set(ylabel='Depth')
         ax[1].invert_yaxis()
         ax[1].xaxis.set_major_locator(plt.MaxNLocator(8))
-        _time_axis_formatter(ax[1], ds, format_x_axis=True)
+        utilities._time_axis_formatter(ax[1], ds, format_x_axis=True)
         [a.grid() for a in ax]
         plt.show()
     return fig, ax
@@ -791,7 +791,7 @@ def plot_vertical_speeds_with_histograms(ds, start_prof=None, end_prof=None):
         ax1.set_ylabel('Vertical Velocity (cm/s)')
         ax1.legend(loc='lower left')
         ax1.legend(loc='lower right')
-        _time_axis_formatter(ax1, ds, format_x_axis=True)
+        utilities._time_axis_formatter(ax1, ds, format_x_axis=True)
 
         # Upper right subplot for histogram of vertical velocity
         ax1_hist = axs[0, 1]
@@ -818,7 +818,7 @@ def plot_vertical_speeds_with_histograms(ds, start_prof=None, end_prof=None):
         ax2.set_xlabel('Time')
         ax2.set_ylabel('Vertical Water Speed (cm/s)')
         ax2.legend(loc='upper left')
-        _time_axis_formatter(ax2, ds, format_x_axis=True)
+        utilities._time_axis_formatter(ax2, ds, format_x_axis=True)
 
         # Lower right subplot for histogram of vertical water speed
         ax2_hist = axs[1, 1]
