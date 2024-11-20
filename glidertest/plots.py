@@ -17,36 +17,7 @@ import os
 dir = os.path.dirname(os.path.realpath(__file__))
 glidertest_style_file = f"{dir}/glidertest.mplstyle"
 
-def _time_axis_formatter(ax, ds, format_x_axis=True):
-    start_time = ds.TIME.min().values
-    end_time = ds.TIME.max().values
-    if (end_time - start_time) < np.timedelta64(1, 'D'):
-        formatter = DateFormatter('%H:%M')
-        locator = mdates.HourLocator(interval=2)
-        start_date = pd.to_datetime(start_time).strftime('%Y-%b-%d')
-        end_date = pd.to_datetime(end_time).strftime('%Y-%b-%d')
-        xlabel = f'Time [UTC] ({start_date})' if start_date == end_date else f'Time [UTC] ({start_date} to {end_date})'
-    elif (end_time - start_time) < np.timedelta64(7, 'D'):
-        formatter = DateFormatter('%d-%b')
-        locator = mdates.DayLocator(interval=1)
-        start_date = pd.to_datetime(start_time).strftime('%Y-%b-%d')
-        end_date = pd.to_datetime(end_time).strftime('%Y-%b-%d')
-        xlabel = f'Time [UTC] ({start_date})' if start_date == end_date else f'Time [UTC] ({start_date} to {end_date})'
-    else:
-        formatter = DateFormatter('%d-%b')
-        locator = None
-        xlabel = 'Time [UTC]'
 
-    if format_x_axis:
-        ax.xaxis.set_major_formatter(formatter)
-        if locator:
-            ax.xaxis.set_major_locator(locator)
-        ax.set_xlabel(xlabel)
-    else:
-        ax.yaxis.set_major_formatter(formatter)
-        if locator:
-            ax.yaxis.set_major_locator(locator)
-        ax.set_ylabel(xlabel)
 
 def plot_updown_bias(df: pd.DataFrame, ax: plt.Axes = None, xlabel='Temperature [C]', **kw: dict, ) -> tuple({plt.Figure, plt.Axes}):
     """
