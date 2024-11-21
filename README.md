@@ -6,13 +6,30 @@ This is a work in progress, all contributions welcome!
 
 ### Install
 
+Install from conda with
+```sh
+conda install --channel conda-forge glidertest
+```
+
 Install from PyPI with
 
 ```sh
 python -m pip install glidertest
 ```
 
-Install a local, development version of this by cloning the repo, opening a terminal in the home directory (next to this readme file) and running these commands:
+### Documentation
+
+Documentation is available at [https://callumrollo.github.io/glidertest/](https://callumrollo.github.io/glidertest/)
+
+Check out the demo notebook `notebooks/demo.ipynb` for example functionality.
+
+As input, glidertest takes [OceanGliders format files](https://github.com/OceanGlidersCommunity/OG-format-user-manual)
+
+### Contributing
+
+All contributions are welcome! See [contributing](CONTRIBUTING.md) for more details
+
+To install a local, development version of glidertest, clone the repo, open a terminal in the root directory (next to this readme file) and run these commands:
 
 ```sh
 pip install -r requirements-dev.txt
@@ -20,17 +37,7 @@ pip install -e .
 ```
 This installs glidertest locally. -e ensures that any edits you make in the files will be picked up by scripts that import functions from glidertest.
 
-### Documentation
-
-Documentation website at [https://callumrollo.github.io/glidertest/](https://callumrollo.github.io/glidertest/)
-
-Check out the example notebook `notebooks/demo.ipynb` for example functionality
-
-As input, glidertest takes [OceanGliders format files](https://github.com/OceanGlidersCommunity/OG-format-user-manual)
-
-### Contributing
-
-All contributions are welcome! Please clone the repo and install a local development version of `glidertest` as described in the Install section above. All new functions should include tests, you can run the tests locally and generate a coverage report with:
+All new functions should include tests, you can run the tests locally and generate a coverage report with:
 
 ```sh
 pytest --cov=glidertest --cov-report term-missing  tests/
