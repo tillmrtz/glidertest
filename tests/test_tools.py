@@ -28,6 +28,8 @@ def test_check_monotony():
     temperature_monotony = tools.check_monotony(ds.TEMP)
     assert profile_number_monotony
     assert not temperature_monotony
+    duration = tools.compute_prof_duration(ds)
+    rolling_mean, overtime = tools.find_outlier_duration(duration, rolling=20, std=2)
 
 
 def test_vert_vel():
