@@ -509,7 +509,6 @@ def plot_glider_track(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict) -> tuple(
         gl.top_labels = False
         gl.right_labels = False
         plt.show()
-        ax = plt.gca()
 
     return fig, ax
 
