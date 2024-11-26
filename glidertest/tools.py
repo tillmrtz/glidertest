@@ -1,5 +1,5 @@
 import numpy as np
-import pandas
+from tqdm import tqdm
 import pandas as pd
 import xarray as xr
 from scipy import stats
@@ -439,8 +439,6 @@ def find_outlier_duration(df: pd.DataFrame, rolling=20, std=2):
     ----------------
     Chiara  Monforte
     """
-
-
     rolling_mean = df['profile_duration'].rolling(window=rolling, min_periods=1).mean()
     overtime = np.where((df['profile_duration'] > rolling_mean + (np.std(rolling_mean) * std)) | (
                 df['profile_duration'] < rolling_mean - (np.std(rolling_mean) * std)))
@@ -449,3 +447,105 @@ def find_outlier_duration(df: pd.DataFrame, rolling=20, std=2):
         print(
             f'There are {len(overtime[0])} profiles where the duration differs by {std} standard deviations of the nearby {rolling} profiles have been detected. Further checks are recommended')
     return rolling_mean, overt_prof
+
+def compute_global_range(ds: xr.Dataset, var='DOXY', min_val=-5, max_val=600):
+    """
+    Applies a gross filter to the dataset by removing observations outside the specified global range.
+
+    This function checks if any values of the specified variable (`var`) fall outside the provided
+    range `[min_val, max_val]`. If a value is out of the specified range, it is excluded from the
+    output. The function returns the filtered dataset with the out-of-range values removed.
+
+    Parameters
+    ----------
+    ds : The xarray Dataset containing the variable to be filtered.
+
+    var : The name of the variable to apply the range filter on. Default is 'DOXY'.
+
+    min_val : The minimum allowable value for the variable. Default is -5.
+
+    max_val : The maximum allowable value for the variable. Default is 600.
+
+    Returns
+    -------
+    xarray.DataArray
+        A filtered DataArray containing only the values of the specified variable
+        within the range `[min_val, max_val]`. Values outside this range are dropped.
+
+    Original author
+    ----------------
+    Chiara Monforte
+    """
+    utilities._check_necessary_variables(ds, [var])
+    out_range = ds[var].where((ds[var]<min_val )| (ds[var]>max_val ))
+    return out_range.dropna(dim='N_MEASUREMENTS')
+
+def compute_spike(ds: xr.Dataset, var='DOXY'):
+    """
+     This function calculates a "spike" value by analyzing the difference between adjacent data points
+     in the selected variable (`var`) in the dataset. It compares the difference between consecutive data
+     points.
+
+     Parameters
+     ----------
+     ds : The xarray dataset containing the variable for which the spike analysis will be performed.
+
+     var : The name of the variable to compute the spike analysis for. Default is 'DOXY'.
+
+     Returns
+     -------
+     pandas.DataFrame
+         A DataFrame containing the computed spike values and corresponding depth values. Each row
+         represents a spike value and the corresponding depth at which it occurred.
+
+     Notes
+     -----
+     - The function processes the data from the second point (`i=1`) to the second-to-last point (`len(ds_sel)-3`).
+
+     Original author
+     ----------------
+     Chiara Monforte
+     """
+    utilities._check_necessary_variables(ds, [var])
+    test_value =[]
+    depth_value=[]
+    ds_sel = ds[var].dropna(dim='N_MEASUREMENTS')
+    for i in tqdm(range(1, len(ds_sel)-3)):
+        point = abs(ds_sel[i+1]-(ds_sel[i+2]+ds_sel[i])/2)-abs((ds_sel[i+2]-ds_sel[i])/2)
+        test_value.append(point.values)
+        depth_value.append(point.DEPTH.values)
+    df_test= pd.DataFrame({'val': test_value, 'depth':  depth_value})
+    return df_test
+def quantify_stuck_value(ds: xr.Dataset,var='DOXY', phase=None):
+    """
+    This function detects "stuck" values in a specified variable (`var`) where there is no change between consecutive
+    data points. The function either analyzes the entire dataset or a specific phase, if provided. A "stuck" value is
+    defined as a value that is the same as its preceding value (i.e., no difference between consecutive data points).
+
+    Parameters
+    ----------
+    ds : The xarray dataset containing the variable for which the stuck value analysis will be performed.
+
+    var : The name of the variable to check for stuck values. Default is 'DOXY'.
+
+    phase :The phase of the data to focus on. If `None`, the function analyzes the entire dataset.
+        If a specific phase is provided, the function only analyzes data from that phase.
+        Default is `None`.
+
+    Returns
+    -------
+    numpy.ndarray
+        An array of indices where the variable's values are "stuck" (i.e., have no difference from the previous value).
+
+    Original author
+    ----------------
+    Chiara Monforte
+    """
+    utilities._check_necessary_variables(ds, [var])
+    if phase is None:
+        stuck_data = [np.where(np.diff(ds[var])==0)][0][0]+1
+    else:
+        utilities._check_necessary_variables(ds, ['PHASE'])
+        sel_phase = ds[var].where(ds.PHASE==phase).dropna(dim='N_MEASUREMENTS')
+        stuck_data = [np.where(np.diff(sel_phase)==0)][0][0]+1
+    return stuck_data

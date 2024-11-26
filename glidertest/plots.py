@@ -383,8 +383,10 @@ def check_temporal_drift(ds: xr.Dataset, var: str, ax: plt.Axes = None, **kw: di
     with plt.style.context(glidertest_style_file):
         if ax is None:
             fig, ax = plt.subplots(1, 2)
+            force_plot = True
         else:
             fig = plt.gcf()
+            force_plot = False
 
         ax[0].scatter(mdates.date2num(ds.TIME), ds[var], s=10)
         # Set x-tick labels based on duration of the selection
@@ -398,7 +400,8 @@ def check_temporal_drift(ds: xr.Dataset, var: str, ax: plt.Axes = None, **kw: di
 
         [a.grid() for a in ax]
         plt.colorbar(c, format=DateFormatter('%b %d'))
-        plt.show()
+        if force_plot:
+            plt.show()
     return fig, ax
 
 
@@ -1081,6 +1084,164 @@ def plot_outlier_duration(ds: xr.Dataset, rolling_mean: pd.Series, overtime, std
         for n, label in enumerate(ax[1].xaxis.get_ticklabels()):
             if n % every_nth != 0:
                 label.set_visible(False)
+        if force_plot:
+            plt.show()
+    return fig, ax
+
+
+def plot_global_range(ds, var='DOXY', min_val=-5, max_val=600, ax=None):
+    """
+   This function generates a histogram of the specified variable (`var`) from the dataset (`ds`) and
+    overlays vertical lines at the specified minimum (`min_val`) and maximum (`max_val`) values to
+    visually represent the global range. The function is useful for visually inspecting whether
+    values of the specified variable fall within the expected global range.
+
+    Parameters
+    ----------
+    ds : The xarray dataset containing the variable (`var`) to be plotted.
+
+    var : The name of the variable to plot. Default is 'DOXY'.
+
+    min_val : The minimum value of the global range to highlight on the plot. Default is -5.
+
+    max_val : The maximum value of the global range to highlight on the plot. Default is 600.
+
+    ax : matplotlib.axes.Axes, optional
+        The axes on which to plot the histogram. If `None`, a new figure and axes are created.
+        Default is `None`.
+
+    Returns
+    -------
+    fig : matplotlib.figure.Figure
+        The figure object containing the plot.
+
+    ax : matplotlib.axes.Axes
+        The axes object containing the histogram plot.
+
+    Original author
+    ----------------
+    Chiara Monforte
+    """
+    with plt.style.context(glidertest_style_file):
+        if ax is None:
+            fig, ax = plt.subplots()
+            force_plot = True
+        else:
+            fig = plt.gcf()
+            force_plot = False
+
+        ax.hist(ds[var], bins=50)
+        ax.axvline(min_val, c='r')
+        ax.axvline(max_val, c='r')
+        ax.set(xlabel=f'{ds[var].long_name} ({ds[var].units})', ylabel='Frequency')
+        ax.set_title('Global range check')
+        ax.grid()
+        if force_plot:
+            plt.show()
+    return fig, ax
+
+
+def plot_spike_test(df, threshold=25, ax=None, xlabel=" Oxygen concentration (mmol m-3)", label=''):
+    """
+    This function generates a histogram of the data (`df.val`), and overlays a vertical red line at the specified
+    `threshold` value. The histogram shows the distribution of the data, and the threshold line helps identify
+    potential outliers or spikes in the distribution.
+
+    Parameters
+    ----------
+    df : A pandas DataFrame containing the data to be plotted. The function expects the `val` column to contain the data values.
+
+    threshold : The value above which data points are considered outliers or spikes. A vertical red line is drawn at this threshold. Default is 25.
+
+    ax : matplotlib.axes.Axes, optional
+        The axes on which to plot the histogram. If `None`, a new figure and axes are created. Default is `None`.
+
+    xlabel : The label for the x-axis. Default is "Oxygen concentration (mmol m-3)".
+
+    label : The label for the histogram, useful for plotting multiple histograms on the same axes. Default is an empty string.
+
+    Returns
+    -------
+    fig : matplotlib.figure.Figure
+        The figure object containing the plot.
+
+    ax : matplotlib.axes.Axes
+        The axes object containing the histogram plot.
+
+    Original author
+    ----------------
+    Chiara Monforte
+    """
+    with plt.style.context(glidertest_style_file):
+        if ax is None:
+            fig, ax = plt.subplots()
+            force_plot = True
+        else:
+            fig = plt.gcf()
+            force_plot = False
+
+        ax.hist(df.val, bins=50, label=label)
+        ax.axvline(threshold, c='r')
+        ax.set(xlabel=xlabel, ylabel='Frequency')
+        ax.set_title('Outlier and spike check')
+        ax.grid()
+        if force_plot:
+            plt.show()
+    return fig, ax
+
+
+def plot_stuck_value(ds, stuck_data, var='DOXY', ax=None, label=''):
+    """
+    This function generates a scatter plot to highlight the "stuck" values (where the dot is at 1). The `stuck_data` array provides the indices where these
+    stuck values occur. The function also displays the percentage of stuck values and provides additional statistics,
+    including the percentage of stuck values that are zero (relevant for certain types of glider data, e.g., in anoxic waters).
+
+    Parameters
+    ----------
+    ds : The xarray dataset containing the variable (`var`) to be analyzed.
+
+    stuck_data : An array of indices where the values of the specified variable are stuck (i.e., identical to the next data point).
+
+    var : The name of the variable to analyze. Default is 'DOXY'.
+
+    ax : matplotlib.axes.Axes, optional
+        The axes on which to plot the scatter plot. If `None`, a new figure and axes are created. Default is `None`.
+
+    label : The label for the scatter plot, useful when plotting multiple scatter plots on the same axes. Default is an empty string.
+
+    Returns
+    -------
+    fig : matplotlib.figure.Figure
+        The figure object containing the plot.
+
+    ax : matplotlib.axes.Axes
+        The axes object containing the scatter plot.
+
+    Original author
+    ----------------
+    Chiara Monforte
+    """
+    with plt.style.context(glidertest_style_file):
+        if ax is None:
+            fig, ax = plt.subplots()
+            force_plot = True
+        else:
+            fig = plt.gcf()
+            force_plot = False
+
+        zeros = np.zeros(len(ds[var]))
+        zeros[stuck_data] = 1
+        ax.scatter(np.arange(len(zeros)), zeros, s=4, label=label)
+        perct = (len(stuck_data) * 100) / len(ds[var])
+        if len(stuck_data) == 0:
+            text = f'{np.round(perct, 1)}% of data is identical to the next one.'
+        else:
+            perct_0 = (len(np.where(ds[var][stuck_data] == 0)[0]) * 100) / len(stuck_data)
+            text = f'{np.round(perct, 1)}% of data is identical to the next one. \n Of those values, {np.round(perct_0, 1)}% are 0s \n(this is relevant in case your glider surveys \nanoxic waters)'
+        ax.text(0.02, 0.2, text,fontsize=10, transform=ax.transAxes)
+        ax.set(ylabel=f'Stuck value test', xlabel='Data index')
+        ax.set_title('Stuck value test')
+        ax.grid()
         if force_plot:
             plt.show()
     return fig, ax

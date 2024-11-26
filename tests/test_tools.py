@@ -54,3 +54,9 @@ def test_hyst():
     df, diff, err, rms = tools.compute_hyst_stat(ds, var='DOXY', v_res=1)
     assert np.array_equal(df_h.dropna(), df.dropna())
     assert len(diff) == len(err)
+
+def test_sop():
+    ds = fetchers.load_sample_dataset()
+    tools.compute_global_range(ds, var='DOXY', min_val=-5, max_val=600)
+    tools.compute_spike(ds.sel(N_MEASUREMENTS=slice(100,300)), var='DOXY')
+    tools.quantify_stuck_value(ds,var='DOXY', phase=None)

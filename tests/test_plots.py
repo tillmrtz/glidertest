@@ -105,3 +105,11 @@ def test_hyst_plot(var='DOXY'):
     fig, ax = plots.plot_hysteresis(ds, var=var, v_res=1, perct_err=2, ax=None)
     assert ax[3].get_ylabel() == 'Depth (m)'
     assert ax[0].get_ylabel() == 'Depth (m)'
+
+def test_sop():
+    ds = fetchers.load_sample_dataset()
+    plots.plot_global_range(ds, var='DOXY', min_val=-5, max_val=600, ax=None)
+    dive_oxy = tools.compute_spike(ds.sel(N_MEASUREMENTS=slice(100,300)), var='DOXY')
+    plots.plot_spike_test(dive_oxy, threshold=25, ax=None, xlabel=" Oxygen concentration (mmol m-3)", label='')
+    stuck_dive = tools.quantify_stuck_value(ds, var='DOXY', phase=2)
+    plots.plot_stuck_value(ds, stuck_dive, var='DOXY', ax=None, label='')
