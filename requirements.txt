@@ -10,3 +10,4 @@ skyfield
 gsw
 sgp4>=2.14
 cartopy
+tqdm
