@@ -1,8 +1,17 @@
 # glidertest
 
-This is a repo to diagnose issues in glider data such as CTD thermal lag.
+Glidertest is a python package for diagnosing potential issues in Ocean Gliders format glider data. Glidertest does not modify, fix or grid glider data. Functionality currently includes:
+
+- Checking time and depth spacing
+- Making histograms and TS diagrams
+- Checking for suspect time duration of profiles
+- Quantifying the bias between dives and climbs (profiles when the glider is going down/up)
+- Checking for sensor drift
+- Detecting quenching in chlorophyll data
+- Plotting vertical velocities
 
 This is a work in progress, all contributions welcome!
+
 
 ### Install
 
