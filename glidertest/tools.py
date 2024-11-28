@@ -1,5 +1,5 @@
 import numpy as np
-import pandas
+from tqdm import tqdm
 import pandas as pd
 import xarray as xr
 from scipy import stats
@@ -439,8 +439,6 @@ def find_outlier_duration(df: pd.DataFrame, rolling=20, std=2):
     ----------------
     Chiara  Monforte
     """
-
-
     rolling_mean = df['profile_duration'].rolling(window=rolling, min_periods=1).mean()
     overtime = np.where((df['profile_duration'] > rolling_mean + (np.std(rolling_mean) * std)) | (
                 df['profile_duration'] < rolling_mean - (np.std(rolling_mean) * std)))
@@ -449,3 +447,36 @@ def find_outlier_duration(df: pd.DataFrame, rolling=20, std=2):
         print(
             f'There are {len(overtime[0])} profiles where the duration differs by {std} standard deviations of the nearby {rolling} profiles have been detected. Further checks are recommended')
     return rolling_mean, overt_prof
+
+def compute_global_range(ds: xr.Dataset, var='DOXY', min_val=-5, max_val=600):
+    """
+    Applies a gross filter to the dataset by removing observations outside the specified global range.
+
+    This function checks if any values of the specified variable (`var`) fall outside the provided
+    range `[min_val, max_val]`. If a value is out of the specified range, it is excluded from the
+    output. The function returns the filtered dataset with the out-of-range values removed.
+
+    Parameters
+    ----------
+    ds : The xarray Dataset containing the variable to be filtered.
+
+    var : The name of the variable to apply the range filter on. Default is 'DOXY'.
+
+    min_val : The minimum allowable value for the variable. Default is -5.
+
+    max_val : The maximum allowable value for the variable. Default is 600.
+
+    Returns
+    -------
+    xarray.DataArray
+        A filtered DataArray containing only the values of the specified variable
+        within the range `[min_val, max_val]`. Values outside this range are dropped.
+
+    Original author
+    ----------------
+    Chiara Monforte
+    """
+    utilities._check_necessary_variables(ds, [var])
+    out_range = ds[var].where((ds[var]<min_val )| (ds[var]>max_val ))
+    return out_range.dropna(dim='N_MEASUREMENTS')
+

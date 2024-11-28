@@ -374,8 +374,10 @@ def check_temporal_drift(ds: xr.Dataset, var: str, ax: plt.Axes = None, **kw: di
     with plt.style.context(glidertest_style_file):
         if ax is None:
             fig, ax = plt.subplots(1, 2)
+            force_plot = True
         else:
             fig = plt.gcf()
+            force_plot = False
 
         ax[0].scatter(mdates.date2num(ds.TIME), ds[var], s=10)
         # Set x-tick labels based on duration of the selection
@@ -389,7 +391,8 @@ def check_temporal_drift(ds: xr.Dataset, var: str, ax: plt.Axes = None, **kw: di
 
         [a.grid() for a in ax]
         plt.colorbar(c, format=DateFormatter('%b %d'))
-        plt.show()
+        if force_plot:
+            plt.show()
     return fig, ax
 
 
@@ -1072,6 +1075,136 @@ def plot_outlier_duration(ds: xr.Dataset, rolling_mean: pd.Series, overtime, std
         for n, label in enumerate(ax[1].xaxis.get_ticklabels()):
             if n % every_nth != 0:
                 label.set_visible(False)
+        if force_plot:
+            plt.show()
+    return fig, ax
+
+
+def plot_global_range(ds, var='DOXY', min_val=-5, max_val=600, ax=None):
+    """
+   This function generates a histogram of the specified variable (`var`) from the dataset (`ds`) and
+    overlays vertical lines at the specified minimum (`min_val`) and maximum (`max_val`) values to
+    visually represent the global range. The function is useful for visually inspecting whether
+    values of the specified variable fall within the expected global range.
+
+    Parameters
+    ----------
+    ds : The xarray dataset containing the variable (`var`) to be plotted.
+
+    var : The name of the variable to plot. Default is 'DOXY'.
+
+    min_val : The minimum value of the global range to highlight on the plot. Default is -5.
+
+    max_val : The maximum value of the global range to highlight on the plot. Default is 600.
+
+    ax : matplotlib.axes.Axes, optional
+        The axes on which to plot the histogram. If `None`, a new figure and axes are created.
+        Default is `None`.
+
+    Returns
+    -------
+    fig : matplotlib.figure.Figure
+        The figure object containing the plot.
+
+    ax : matplotlib.axes.Axes
+        The axes object containing the histogram plot.
+
+    Original author
+    ----------------
+    Chiara Monforte
+    """
+    with plt.style.context(glidertest_style_file):
+        if ax is None:
+            fig, ax = plt.subplots()
+            force_plot = True
+        else:
+            fig = plt.gcf()
+            force_plot = False
+
+        ax.hist(ds[var], bins=50)
+        ax.axvline(min_val, c='r')
+        ax.axvline(max_val, c='r')
+        ax.set(xlabel=f'{ds[var].long_name} ({ds[var].units})', ylabel='Frequency')
+        ax.set_title('Global range check')
+        ax.grid()
+        if force_plot:
+            plt.show()
+    return fig, ax
+
+
+def plot_ioosqc(data, suspect_threshold=[25], fail_threshold=[50], title='', ax=None):
+    """
+    Plots a scatter plot of the the results of IOOS qQC tests with quality control labels (GOOD, UNKNOWN, SUSPECT, FAIL, MISSING) on the y-axis,
+    and overlays threshold-based markers for suspect and fail values. This function is useful for visualizing the status of
+    data points according to the quality control thresholds.
+
+    Parameters:
+    -----------
+    data : The result from the IOOS_QC test.
+            A sequence of numerical values representing the data points to be plotted.
+
+    suspect_threshold : A list containing one or two numerical values indicating the thresholds for suspect values. If one value is provided,
+        it applies to both lower and upper bounds for suspect data points. If two values are provided, they define the
+        lower and upper bounds for suspect values.
+
+    fail_threshold A list containing one or two numerical values indicating the thresholds for fail values. Similar to `suspect_threshold`,
+        it can have one or two values to define the bounds for fail data points.
+
+    title : str, optional, default = ''
+        The title to display at the top of the plot.
+
+    ax : matplotlib Axes object, optional, default = None
+        If provided, the plot will be drawn on this existing Axes object. If None, a new figure and axis will be created.
+
+    Returns:
+    --------
+    fig : matplotlib figure
+        The figure object containing the plot.
+
+    ax : matplotlib Axes object
+        The axes object used for plotting.
+
+    Notes:
+    ------
+    - The plot uses two y-axes: one for labeling data points as 'GOOD', 'UNKNOWN', 'SUSPECT', 'FAIL', or 'MISSING' based
+      on thresholds, and another for marking specific suspect and fail ranges.
+    Original author
+    ----------------
+    Chiara Monforte
+    """
+    with plt.style.context(glidertest_style_file):
+        if ax is None:
+            fig, ax = plt.subplots()
+            force_plot = True
+        else:
+            fig = plt.gcf()
+            force_plot = False
+
+        ax.scatter(np.arange(len(data)), data, s=4)
+        a = ax.get_yticks().tolist()
+        a[1:] = ['GOOD', 'UNKNOWN', 'SUSPECT', 'FAIL', '', '', '', '', 'MISSING']
+        ax.set_yticklabels(a)
+        ax2 = ax.twinx()
+        ax2.scatter(np.arange(len(data)), data, s=4)
+
+        a_2 = ax2.get_yticks().tolist()
+        a_2[1:] = ['', '', '', '', '', '', '', '', '']
+        if len(suspect_threshold) > 1:
+            a_2[1] = f'x>{suspect_threshold[0]} or \nx<{suspect_threshold[1]}'
+        else:
+            a_2[1] = f'x<{suspect_threshold[0]}'
+        if len(fail_threshold) > 1:
+            a_2[3] = f'{suspect_threshold[1]}<x<{fail_threshold[1]} &\n {fail_threshold[0]}<x<{suspect_threshold[0].values}'
+            a_2[4] = f'x<{fail_threshold[0]} or \nx>{fail_threshold[1]}'
+        else:
+            a_2[3] = f'x>{suspect_threshold[0]} and \nx<{fail_threshold[0]}'
+            a_2[4] = f'x>{fail_threshold[0]}'
+        a_2[9] = 'Nan'
+
+        ax2.set_yticklabels(a_2, fontsize=12)
+        ax.set_xlabel('Data Index')
+        ax.grid()
+        ax.set_title(title)
         if force_plot:
             plt.show()
     return fig, ax

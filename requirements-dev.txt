@@ -17,3 +17,5 @@ sphinx
 sphinx-rtd-theme
 cartopy
 gsw
+tqdm
+ioos_qc
