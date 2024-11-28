@@ -1195,8 +1195,7 @@ def plot_ioosqc(data, suspect_threshold=[25], fail_threshold=[50], title='', ax=
         else:
             a_2[1] = f'x<{suspect_threshold[0]}'
         if len(fail_threshold) > 1:
-            a_2[
-                3] = f'{suspect_threshold[1]}<x<{fail_threshold[1]} &\n {fail_threshold[0]}<x<{suspect_threshold[0].values}'
+            a_2[3] = f'{suspect_threshold[1]}<x<{fail_threshold[1]} &\n {fail_threshold[0]}<x<{suspect_threshold[0].values}'
             a_2[4] = f'x<{fail_threshold[0]} or \nx>{fail_threshold[1]}'
         else:
             a_2[3] = f'x>{suspect_threshold[0]} and \nx<{fail_threshold[0]}'
