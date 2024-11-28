@@ -113,28 +113,6 @@ def construct_2dgrid(x, y, v, xi=1, yi=1):
     YI, XI = np.meshgrid(yi, xi)
     return grid, XI, YI
 
-def compute_cline(var, depth_array):
-    """
-    Find the depth of the maximum vertical difference for a specified variables
-    
-    Parameters
-    ----------
-    var: 2D array containing data from a selected variable gridded over time/profile/distance etc. and depth (y-axis))
-    depth_array: 2D array containing pressure/depth data gridded over time/profile/distance etc. and depth (y-axis))
-    
-    Returns
-    -------
-    1D array containing the depth of the cline at each timestamp/profile/distance etc.
-    Original author
-    ----------------
-    Chiara Monforte
-    """
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=RuntimeWarning)
-        clin = np.where(np.abs(np.diff(np.nanmean(var, axis=0))) == np.nanmax(np.abs(np.diff(np.nanmean(var, axis=0)))))
-    return np.round(depth_array[0, clin[0]], 1)
-
-
 def compute_sunset_sunrise(time, lat, lon):
     """
     Calculates the local sunrise/sunset of the glider location from GliderTools.

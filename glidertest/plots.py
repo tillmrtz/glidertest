@@ -79,8 +79,7 @@ def plot_basic_vars(ds: xr.Dataset, v_res=1, start_prof=0, end_prof=-1):
     
     Returns
     -------
-    Line plots for the averages of the different variables. 
-    Thermo, halo and pycnocline are computed and plotted. A sentence stating the depth of the clines is printed too
+    Line plots for the averages of the different variables.
     
     Original author
     ----------------
@@ -100,11 +99,6 @@ def plot_basic_vars(ds: xr.Dataset, v_res=1, start_prof=0, end_prof=-1):
     denG = denG[start_prof:end_prof, :]
     depthG = depthG[start_prof:end_prof, :]
 
-    halo = utilities.compute_cline(salG, depthG)
-    thermo = utilities.compute_cline(tempG, depthG)
-    pycno = utilities.compute_cline(denG, depthG)
-    print(
-        f'The thermocline, halocline and pycnocline are located at respectively {thermo}, {halo} and {pycno}m as shown in the plots as well')
     with plt.style.context(glidertest_style_file):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=RuntimeWarning)
@@ -118,9 +112,6 @@ def plot_basic_vars(ds: xr.Dataset, v_res=1, start_prof=0, end_prof=-1):
             ax[0].plot(np.nanmean(tempG, axis=0), depthG[0, :], c='blue')
             ax1.plot(np.nanmean(salG, axis=0), depthG[0, :], c='red')
             ax2.plot(np.nanmean(denG, axis=0), depthG[0, :], c='black')
-            ax[0].axhline(thermo, linestyle='dashed', c='blue')
-            ax1.axhline(halo, linestyle='dashed', c='red')
-            ax2.axhline(pycno, linestyle='dashed', c='black')
 
             ax[0].set(xlabel=f'Temperature [C]', ylabel='Depth (m)')
             ax[0].tick_params(axis='x', colors='blue')
