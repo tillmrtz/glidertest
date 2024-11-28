@@ -1181,14 +1181,15 @@ def plot_ioosqc(data, suspect_threshold=[25], fail_threshold=[50], title='', ax=
             force_plot = False
 
         ax.scatter(np.arange(len(data)), data, s=4)
+        ax.set_yticks([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
         a = ax.get_yticks().tolist()
-        a[1:] = ['GOOD', 'UNKNOWN', 'SUSPECT', 'FAIL', '', '', '', '', 'MISSING']
+        a[:] = ['', 'GOOD', 'UNKNOWN', 'SUSPECT', 'FAIL', '', '', '', '', 'MISSING', '']
         ax.set_yticklabels(a)
         ax2 = ax.twinx()
         ax2.scatter(np.arange(len(data)), data, s=4)
-
+        ax2.set_yticks([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
         a_2 = ax2.get_yticks().tolist()
-        a_2[1:] = ['', '', '', '', '', '', '', '', '']
+        a_2[:] = ['', '', '', '', '', '', '', '', '', '', '']
         if len(suspect_threshold) > 1:
             a_2[1] = f'x>{suspect_threshold[0]} or \nx<{suspect_threshold[1]}'
         else:
@@ -1202,6 +1203,7 @@ def plot_ioosqc(data, suspect_threshold=[25], fail_threshold=[50], title='', ax=
         a_2[9] = 'Nan'
 
         ax2.set_yticklabels(a_2, fontsize=12)
+
         ax.set_xlabel('Data Index')
         ax.grid()
         ax.set_title(title)
