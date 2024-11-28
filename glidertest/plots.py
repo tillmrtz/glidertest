@@ -1141,33 +1141,42 @@ def plot_global_range(ds, var='DOXY', min_val=-5, max_val=600, ax=None):
     return fig, ax
 
 
-def plot_spike_test(df, threshold=25, ax=None, xlabel=" Oxygen concentration (mmol m-3)", label=''):
+def plot_ioosqc(data, suspect_threshold=[25], fail_threshold=[50], title='', ax=None):
     """
-    This function generates a histogram of the data (`df.val`), and overlays a vertical red line at the specified
-    `threshold` value. The histogram shows the distribution of the data, and the threshold line helps identify
-    potential outliers or spikes in the distribution.
+    Plots a scatter plot of the the results of IOOS qQC tests with quality control labels (GOOD, UNKNOWN, SUSPECT, FAIL, MISSING) on the y-axis,
+    and overlays threshold-based markers for suspect and fail values. This function is useful for visualizing the status of
+    data points according to the quality control thresholds.
 
-    Parameters
-    ----------
-    df : A pandas DataFrame containing the data to be plotted. The function expects the `val` column to contain the data values.
+    Parameters:
+    -----------
+    data : The result from the IOOS_QC test.
+            A sequence of numerical values representing the data points to be plotted.
 
-    threshold : The value above which data points are considered outliers or spikes. A vertical red line is drawn at this threshold. Default is 25.
+    suspect_threshold : A list containing one or two numerical values indicating the thresholds for suspect values. If one value is provided,
+        it applies to both lower and upper bounds for suspect data points. If two values are provided, they define the
+        lower and upper bounds for suspect values.
 
-    ax : matplotlib.axes.Axes, optional
-        The axes on which to plot the histogram. If `None`, a new figure and axes are created. Default is `None`.
+    fail_threshold A list containing one or two numerical values indicating the thresholds for fail values. Similar to `suspect_threshold`,
+        it can have one or two values to define the bounds for fail data points.
 
-    xlabel : The label for the x-axis. Default is "Oxygen concentration (mmol m-3)".
+    title : str, optional, default = ''
+        The title to display at the top of the plot.
 
-    label : The label for the histogram, useful for plotting multiple histograms on the same axes. Default is an empty string.
+    ax : matplotlib Axes object, optional, default = None
+        If provided, the plot will be drawn on this existing Axes object. If None, a new figure and axis will be created.
 
-    Returns
-    -------
-    fig : matplotlib.figure.Figure
+    Returns:
+    --------
+    fig : matplotlib figure
         The figure object containing the plot.
 
-    ax : matplotlib.axes.Axes
-        The axes object containing the histogram plot.
+    ax : matplotlib Axes object
+        The axes object used for plotting.
 
+    Notes:
+    ------
+    - The plot uses two y-axes: one for labeling data points as 'GOOD', 'UNKNOWN', 'SUSPECT', 'FAIL', or 'MISSING' based
+      on thresholds, and another for marking specific suspect and fail ranges.
     Original author
     ----------------
     Chiara Monforte
@@ -1180,68 +1189,31 @@ def plot_spike_test(df, threshold=25, ax=None, xlabel=" Oxygen concentration (mm
             fig = plt.gcf()
             force_plot = False
 
-        ax.hist(df.val, bins=50, label=label)
-        ax.axvline(threshold, c='r')
-        ax.set(xlabel=xlabel, ylabel='Frequency')
-        ax.set_title('Outlier and spike check')
-        ax.grid()
-        if force_plot:
-            plt.show()
-    return fig, ax
+        ax.scatter(np.arange(len(data)), data, s=4)
+        a = ax.get_yticks().tolist()
+        a[1:] = ['GOOD', 'UNKNOWN', 'SUSPECT', 'FAIL', '', '', '', '', 'MISSING']
+        ax.set_yticklabels(a)
+        ax2 = ax.twinx()
+        ax2.scatter(np.arange(len(data)), data, s=4)
 
-
-def plot_stuck_value(ds, stuck_data, var='DOXY', ax=None, label=''):
-    """
-    This function generates a scatter plot to highlight the "stuck" values (where the dot is at 1). The `stuck_data` array provides the indices where these
-    stuck values occur. The function also displays the percentage of stuck values and provides additional statistics,
-    including the percentage of stuck values that are zero (relevant for certain types of glider data, e.g., in anoxic waters).
-
-    Parameters
-    ----------
-    ds : The xarray dataset containing the variable (`var`) to be analyzed.
-
-    stuck_data : An array of indices where the values of the specified variable are stuck (i.e., identical to the next data point).
-
-    var : The name of the variable to analyze. Default is 'DOXY'.
-
-    ax : matplotlib.axes.Axes, optional
-        The axes on which to plot the scatter plot. If `None`, a new figure and axes are created. Default is `None`.
-
-    label : The label for the scatter plot, useful when plotting multiple scatter plots on the same axes. Default is an empty string.
-
-    Returns
-    -------
-    fig : matplotlib.figure.Figure
-        The figure object containing the plot.
-
-    ax : matplotlib.axes.Axes
-        The axes object containing the scatter plot.
-
-    Original author
-    ----------------
-    Chiara Monforte
-    """
-    with plt.style.context(glidertest_style_file):
-        if ax is None:
-            fig, ax = plt.subplots()
-            force_plot = True
+        a_2 = ax2.get_yticks().tolist()
+        a_2[1:] = ['', '', '', '', '', '', '', '', '']
+        if len(suspect_threshold) > 1:
+            a_2[1] = f'x>{suspect_threshold[0]} or \nx<{suspect_threshold[1]}'
         else:
-            fig = plt.gcf()
-            force_plot = False
-
-        zeros = np.zeros(len(ds[var]))
-        zeros[stuck_data] = 1
-        ax.scatter(np.arange(len(zeros)), zeros, s=4, label=label)
-        perct = (len(stuck_data) * 100) / len(ds[var])
-        if len(stuck_data) == 0:
-            text = f'{np.round(perct, 1)}% of data is identical to the next one.'
+            a_2[1] = f'x<{suspect_threshold[0]}'
+        if len(fail_threshold) > 1:
+            a_2[3] = f'{suspect_threshold[1]}<x<{fail_threshold[1]} &\n {fail_threshold[0]}<x<{suspect_threshold[0].values}'
+            a_2[4] = f'x<{fail_threshold[0]} or \nx>{fail_threshold[1]}'
         else:
-            perct_0 = (len(np.where(ds[var][stuck_data] == 0)[0]) * 100) / len(stuck_data)
-            text = f'{np.round(perct, 1)}% of data is identical to the next one. \n Of those values, {np.round(perct_0, 1)}% are 0s \n(this is relevant in case your glider surveys \nanoxic waters)'
-        ax.text(0.02, 0.2, text,fontsize=10, transform=ax.transAxes)
-        ax.set(ylabel=f'Stuck value test', xlabel='Data index')
-        ax.set_title('Stuck value test')
+            a_2[3] = f'x>{suspect_threshold[0]} and \nx<{fail_threshold[0]}'
+            a_2[4] = f'x>{fail_threshold[0]}'
+        a_2[9] = 'Nan'
+
+        ax2.set_yticklabels(a_2, fontsize=12)
+        ax.set_xlabel('Data Index')
         ax.grid()
+        ax.set_title(title)
         if force_plot:
             plt.show()
     return fig, ax
