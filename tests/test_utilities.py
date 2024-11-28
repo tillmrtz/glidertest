@@ -12,8 +12,6 @@ def test_utilitiesmix():
     tempG, profG, depthG = utilities.construct_2dgrid(ds.PROFILE_NUMBER, ds.DEPTH, ds.TEMP, p, z)
     denG, profG, depthG = utilities.construct_2dgrid(ds.PROFILE_NUMBER, ds.DEPTH, ds.DENSITY, p, z)
 
-    halo = utilities.compute_cline(denG, depthG)
-
 
 def test_sunset_sunrise():
     ds = fetchers.load_sample_dataset()
