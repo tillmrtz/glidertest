@@ -3,7 +3,7 @@ from glidertest import fetchers, tools, plots
 import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib
-import ioos_qc.qartod as ioos_qc
+from ioos_qc import qartod
 matplotlib.use('agg')  # use agg backend to prevent creating plot windows during tests
 
 def test_plots(start_prof=0, end_prof=100):
@@ -110,7 +110,7 @@ def test_hyst_plot(var='DOXY'):
 def test_sop():
     ds = fetchers.load_sample_dataset()
     plots.plot_global_range(ds, var='DOXY', min_val=-5, max_val=600, ax=None)
-    spike = ioos_qc.spike_test(ds.DOXY,suspect_threshold=25,fail_threshold=50, method="average", )
+    spike = qartod.spike_test(ds.DOXY,suspect_threshold=25,fail_threshold=50, method="average", )
     plots.plot_ioosqc(spike, suspect_threshold=[25], fail_threshold=[50], title='Spike test DOXY')
-    flat = ioos_qc.flat_line_test(ds.DOXY, ds.TIME, 1, 2, 0.001)
+    flat = qartod.flat_line_test(ds.DOXY, ds.TIME, 1, 2, 0.001)
     plots.plot_ioosqc(flat, suspect_threshold=[0.01], fail_threshold=[0.1], title='Flat test DOXY')
