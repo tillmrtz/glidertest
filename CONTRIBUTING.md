@@ -17,11 +17,11 @@ All types of contributions are encouraged and valued. See the [Table of Contents
 
 ## I Have a Question
 
-> If you want to ask a question, we assume that you have read the available [Documentation](https://callumrollo.github.io/glidertest/).
+> If you want to ask a question, we assume that you have read the available [Documentation](https://oceangliderscommunity.github.io/glidertest/).
 
-Before you ask a question, it is best to search for existing [Issues](https://github.com/callumrollo/glidertest/issues) that might help you. If you don't find an existing Issue:
+Before you ask a question, it is best to search for existing [Issues](https://github.com/OceanGlidersCommunity/glidertest/issues) that might help you. If you don't find an existing Issue:
 
-- Open an [Issue](https://github.com/callumrollo/glidertest/issues/new).
+- Open an [Issue](https://github.com/OceanGlidersCommunity/glidertest/issues/new).
 - Provide as much context as you can about what you're running into.
 - If possible, try to provide a reproducible example, e.g. a jupyter notebook.
 
@@ -41,7 +41,7 @@ A good bug report shouldn't leave others needing to chase you up for more inform
   - Stack trace (Traceback) or screenshot error message
   - OS, Platform and Version (Windows, Linux, macOS, x86, ARM)
   - Input dataset, can you recreate this bug with one of the example datasets provided by `glidertest`? If not, provide your dataset if practical
-- Open an [Issue](https://github.com/callumrollo/glidertest/issues) describing the bug
+- Open an [Issue](https://github.com/OceanGlidersCommunity/glidertest/issues) describing the bug
 
 <!-- omit in toc -->
 ### Suggesting Enhancements
@@ -52,13 +52,13 @@ This section guides you through submitting an enhancement suggestion for XYZ, **
 #### Before Submitting an Enhancement
 
 - Make sure that you are using the latest version.
-- Read the [documentation](https://callumrollo.github.io/glidertest) carefully and find out if the functionality is already covered, maybe by an individual configuration.
+- Read the [documentation](https://oceangliderscommunity.github.io/glidertest/) carefully and find out if the functionality is already covered, maybe by an individual configuration.
 - Find out whether your idea fits with the scope and aims of the project. It's up to you to make a strong case to convince the project's developers of the merits of this feature. Keep in mind that we want features that will be useful to the majority of our users and not just a small subset.
 
 <!-- omit in toc -->
 #### How Do I Submit a Good Enhancement Suggestion?
 
-Enhancement suggestions are tracked as [GitHub issues](https://github.com/callumrollo/glidertest/issues).
+Enhancement suggestions are tracked as [GitHub issues](https://github.com/OceanGlidersCommunity/glidertest/issues).
 
 - Use a **clear and descriptive title** for the issue to identify the suggestion.
 - Provide a **step-by-step description of the suggested enhancement** in as many details as possible.
@@ -86,7 +86,7 @@ Code is organised into files within `glidertest/*.py` and demonstrated in jupyte
 
 ### Improving The Documentation
 
-Our [documentation](https://callumrollo.github.io/glidertest/) is built from the function docstrings and the [example notebook](https://callumrollo.github.io/glidertest/demo-output.html). If you think the documentation could be better, do not hesitate to suggest an improvement! Either in an Issue or a PR.
+Our [documentation](https://oceangliderscommunity.github.io/glidertest/) is built from the function docstrings and the [example notebook](https://oceangliderscommunity.github.io/glidertest/demo-output.html). If you think the documentation could be better, do not hesitate to suggest an improvement! Either in an Issue or a PR.
 
 ## Attribution
 This guide is based on the **contributing-gen**. [Make your own](https://github.com/bttger/contributing-gen)!
