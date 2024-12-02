@@ -28,7 +28,7 @@ python -m pip install glidertest
 
 ### Documentation
 
-Documentation is available at [https://callumrollo.github.io/glidertest/](https://callumrollo.github.io/glidertest/)
+Documentation is available at [https://oceangliderscommunity.github.io/glidertest/](https://oceangliderscommunity.github.io/glidertest/)
 
 Check out the demo notebook `notebooks/demo.ipynb` for example functionality.
 
