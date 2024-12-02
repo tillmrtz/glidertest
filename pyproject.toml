@@ -27,9 +27,9 @@ dynamic = [
   "dependencies",
   "version",
 ]
-urls.documentation = "https://github.com/callumrollo/glidertest"
-urls.homepage = "https://github.com/callumrollo/glidertest"
-urls.repository = "https://github.com/callumrollo/glidertest"
+urls.documentation = "https://oceangliderscommunity.github.io/glidertest/"
+urls.homepage = "https://github.com/OceanGlidersCommunity/glidertest"
+urls.repository = "https://github.com/OceanGlidersCommunity/glidertest"
 
 [tool.setuptools]
 packages = [
