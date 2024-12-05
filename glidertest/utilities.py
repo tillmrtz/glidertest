@@ -311,13 +311,53 @@ label_dict={
     }
 }
 
-def plotting_labels(var):
+def plotting_labels(var: str):
+    """
+    Retrieves the label associated with a variable from a predefined dictionary.
+
+    This function checks if the given variable `var` exists as a key in the `label_dict` dictionary.
+    If found, it returns the associated label from `label_dict`. If not, it returns the variable name itself as the label.
+
+    Parameters
+    ----------
+    var (str): The variable (key) whose label is to be retrieved.
+
+    Returns:
+    ----------
+    str: The label corresponding to the variable `var`. If the variable is not found in `label_dict`,
+             the function returns the variable name as the label.
+
+    Notes:
+    ----------
+    Original author: Chiara Monforte
+    """
     if var in label_dict:
         label = f'{label_dict[var]["label"]}'
     else:
         label= f'{var}'
     return label
-def plotting_units(ds,var):
+def plotting_units(ds: xr.Dataset,var: str):
+    """
+    Retrieves the units associated with a variable from a dataset or a predefined dictionary.
+
+    This function checks if the given variable `var` exists as a key in the `label_dict` dictionary.
+    If found, it returns the associated units from `label_dict`. If not, it returns the units of the variable
+    from the dataset `ds` using the `var` key.
+
+    Parameters
+    ----------
+    ds (xarray.Dataset or similar): The dataset containing the variable `var`.
+    var (str): The variable (key) whose units are to be retrieved.
+
+    Returns:
+    ----------
+    str: The units corresponding to the variable `var`. If the variable is found in `label_dict`,
+         the associated units will be returned. If not, the function returns the units from `ds[var]`.
+
+    Notes:
+    ----------
+    Original author: Chiara Monforte
+    """
     if var in label_dict:
         units = f'{label_dict[var]["units"]}'
     else:
