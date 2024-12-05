@@ -53,7 +53,7 @@ def test_quench_sequence(ylim=45):
 
     fig, ax = plots.plot_daynight_avg(ds, var='TEMP')
     assert ax.get_ylabel() == 'Depth (m)'
-    assert ax.get_xlabel() == 'Temperature (°C))'
+    assert ax.get_xlabel() == 'Temperature (°C)'
 
 
 def test_temporal_drift(var='DOXY'):
