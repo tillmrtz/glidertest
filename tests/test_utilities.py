@@ -24,3 +24,13 @@ def test_depth_z():
     ds = utilities.calc_DEPTH_Z(ds)
     assert 'DEPTH_Z' in ds.variables
     assert ds.DEPTH_Z.min() < -50
+def test_labels():
+    ds = fetchers.load_sample_dataset()
+    var = 'PITCH'
+    label = utilities.plotting_labels(var)
+    assert label == 'PITCH'
+    var = 'TEMP'
+    label = utilities.plotting_labels(var)
+    assert label == 'Temperature'
+    unit=utilities.plotting_units(ds, var)
+    assert unit == "$^\circ$C"

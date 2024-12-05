@@ -273,3 +273,53 @@ def calc_DEPTH_Z(ds):
     }
     
     return ds
+
+label_dict={
+    "PSAL": {
+        "label": "Practical salinity",
+        "units": "PSU"},
+    "TEMP": {
+        "label": "Temperature",
+        "units": "$^\circ$C"},
+    "DENSITY":{
+        "label": "In situ density",
+        "units": "kg m$^{-3}$"
+    },
+    "DOXY": {
+        "label": "Dissolved oxygen",
+        "units": "mmol m$^{-3}$"
+    },
+    "SA":{
+        "label": "Absolute salinity",
+        "units": "g kg$^{-1}$"
+    },
+    "CHLA":{
+        "label": "Chlorophyll",
+        "units": "mg m$^{-3}$"
+    },
+    "CNDC":{
+        "label": "Conductivity",
+        "units": "mS cm$^{-1}$"
+    },
+    "DPAR":{
+        "label": "Irradiance PAR",
+        "units": "μE cm$^{-2}$ s$^{-1}$"
+    },
+    "BBP700":{
+        "label": "Red backscatter, b${bp}$(700)",
+        "units": "m$^{-1}$"
+    }
+}
+
+def plotting_labels(var):
+    if var in label_dict:
+        label = f'{label_dict[var]["label"]}'
+    else:
+        label= f'{var}'
+    return label
+def plotting_units(ds,var):
+    if var in label_dict:
+        units = f'{label_dict[var]["units"]}'
+    else:
+        units= f'{ds[var].units}'
+    return units
