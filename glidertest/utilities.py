@@ -359,7 +359,8 @@ def plotting_units(ds: xr.Dataset,var: str):
     Chiara Monforte
     """
     if var in label_dict:
-        units = f'{label_dict[var]["units"]}'
+        return f'{label_dict[var]["units"]}'
+    elif 'units' in ds[var].attrs:
+        return f'{ds[var].attrs['units']}'
     else:
-        units= f'{ds[var].units}'
-    return units
+        return ""
