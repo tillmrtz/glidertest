@@ -1187,9 +1187,9 @@ def plot_global_range(ds, var='DOXY', min_val=-5, max_val=600, ax=None):
     Parameters
     ----------
     ds : The xarray dataset containing the variable (`var`) to be plotted.
-    var : The name of the variable to plot. Default is 'DOXY'.
-    min_val : The minimum value of the global range to highlight on the plot. Default is -5.
-    max_val : The maximum value of the global range to highlight on the plot. Default is 600.
+    var : The name of the variable to plot.
+    min_val : The minimum value of the global range to highlight on the plot.
+    max_val : The maximum value of the global range to highlight on the plot.
     ax : matplotlib.axes.Axes, optional
         The axes on which to plot the histogram. If `None`, a new figure and axes are created.
         Default is `None`.

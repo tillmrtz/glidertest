@@ -33,4 +33,4 @@ def test_labels():
     label = utilities.plotting_labels(var)
     assert label == 'Temperature'
     unit=utilities.plotting_units(ds, var)
-    assert unit == "$^\circ$C"
+    assert unit == "°C"

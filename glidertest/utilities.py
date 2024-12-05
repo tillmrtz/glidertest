@@ -280,34 +280,34 @@ label_dict={
         "units": "PSU"},
     "TEMP": {
         "label": "Temperature",
-        "units": "$^\circ$C"},
+        "units": "°C"},
     "DENSITY":{
         "label": "In situ density",
-        "units": "kg m$^{-3}$"
+        "units": "kg m⁻³"
     },
     "DOXY": {
         "label": "Dissolved oxygen",
-        "units": "mmol m$^{-3}$"
+        "units": "mmol m⁻³"
     },
     "SA":{
         "label": "Absolute salinity",
-        "units": "g kg$^{-1}$"
+        "units": "g kg⁻¹"
     },
     "CHLA":{
         "label": "Chlorophyll",
-        "units": "mg m$^{-3}$"
+        "units": "mg m⁻³"
     },
     "CNDC":{
         "label": "Conductivity",
-        "units": "mS cm$^{-1}$"
+        "units": "mS cm⁻¹"
     },
     "DPAR":{
         "label": "Irradiance PAR",
-        "units": "μE cm$^{-2}$ s$^{-1}$"
+        "units": "μE cm⁻² s⁻¹"
     },
     "BBP700":{
         "label": "Red backscatter, b${bp}$(700)",
-        "units": "m$^{-1}$"
+        "units": "m⁻¹"
     }
 }
 
@@ -327,9 +327,9 @@ def plotting_labels(var: str):
     str: The label corresponding to the variable `var`. If the variable is not found in `label_dict`,
              the function returns the variable name as the label.
 
-    Notes:
+    Original author:
     ----------
-    Original author: Chiara Monforte
+    Chiara Monforte
     """
     if var in label_dict:
         label = f'{label_dict[var]["label"]}'
@@ -354,9 +354,9 @@ def plotting_units(ds: xr.Dataset,var: str):
     str: The units corresponding to the variable `var`. If the variable is found in `label_dict`,
          the associated units will be returned. If not, the function returns the units from `ds[var]`.
 
-    Notes:
+    Original author:
     ----------
-    Original author: Chiara Monforte
+    Chiara Monforte
     """
     if var in label_dict:
         units = f'{label_dict[var]["units"]}'

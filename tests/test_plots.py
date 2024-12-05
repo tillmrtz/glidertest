@@ -13,7 +13,7 @@ def test_plots(start_prof=0, end_prof=100):
     ds = ds.drop_vars(['DENSITY'])
     fig, ax = plots.plot_basic_vars(ds, start_prof=start_prof, end_prof=end_prof)
     assert ax[0].get_ylabel() == 'Depth (m)'
-    assert ax[0].get_xlabel() == 'Temperature \n($^\\circ$C)'
+    assert ax[0].get_xlabel() == 'Temperature \n(°C)'
 
 
 def test_up_down_bias(v_res=1):
@@ -35,9 +35,9 @@ def test_up_down_bias(v_res=1):
 def test_chl(var1='CHLA', var2='BBP700'):
     ds = fetchers.load_sample_dataset()
     ax = plots.process_optics_assess(ds, var=var1)
-    assert ax.get_ylabel() == 'Chlorophyll (mg m$^{-3}$)'
+    assert ax.get_ylabel() == 'Chlorophyll (mg m⁻³)'
     ax = plots.process_optics_assess(ds, var=var2)
-    assert ax.get_ylabel() == 'Red backscatter, b${bp}$(700) (m$^{-1}$)'
+    assert ax.get_ylabel() == 'Red backscatter, b${bp}$(700) (m⁻¹)'
     with pytest.raises(KeyError) as e:
         plots.process_optics_assess(ds, var='nonexistent_variable')
 
@@ -53,7 +53,7 @@ def test_quench_sequence(ylim=45):
 
     fig, ax = plots.plot_daynight_avg(ds, var='TEMP')
     assert ax.get_ylabel() == 'Depth (m)'
-    assert ax.get_xlabel() == 'Temperature ($^\\circ$C)'
+    assert ax.get_xlabel() == 'Temperature (°C))'
 
 
 def test_temporal_drift(var='DOXY'):
