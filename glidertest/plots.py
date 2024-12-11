@@ -338,20 +338,20 @@ def plot_quench_assess(ds: xr.Dataset, sel_var: str, ax: plt.Axes = None, start_
 
         sunrise, sunset = utilities.compute_sunset_sunrise(ds_sel.TIME, ds_sel.LATITUDE, ds_sel.LONGITUDE)
 
-        c = ax.scatter(ds_sel.TIME, ds_sel.DEPTH, c=ds_sel[sel_var], s=10, vmin=np.nanpercentile(ds_sel[sel_var], 0.5),
-                       vmax=np.nanpercentile(ds_sel[sel_var], 99.5))
+        c = ax.scatter(ds_sel.TIME, ds_sel.DEPTH, c=np.log(ds_sel[sel_var]), s=10, vmin=np.nanpercentile(np.log(ds_sel[sel_var]), 0.5),
+                   vmax=np.nanpercentile(np.log(ds_sel[sel_var]), 99.5))
         ax.set_ylim(ylim, -ylim / 30)
         for n in np.unique(sunset):
             ax.axvline(np.unique(n), c='blue')
         for m in np.unique(sunrise):
             ax.axvline(np.unique(m), c='orange')
         ax.set_ylabel('Depth (m)')
-
+    
         # Set x-tick labels based on duration of the selection
         # Could pop out as a utility plotting function?
         utilities._time_axis_formatter(ax, ds_sel, format_x_axis=True)
-
-        plt.colorbar(c, label=f'{utilities.plotting_labels(sel_var)} ({utilities.plotting_units(ds,sel_var)})')
+    
+        plt.colorbar(c, label=f'{utilities.plotting_labels(sel_var)} (log10 {utilities.plotting_units(ds,sel_var)})')
         plt.show()
     return fig, ax
 
