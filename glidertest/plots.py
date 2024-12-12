@@ -281,7 +281,7 @@ def plot_daynight_avg(ds,var='PSAL', ax: plt.Axes = None, sel_day=None, **kw: di
 
 
 def plot_quench_assess(ds: xr.Dataset, sel_var: str, ax: plt.Axes = None, start_time=None,
-                           end_time=None,start_prof=None, end_prof=None, ylim=45, **kw: dict, ) -> tuple({plt.Figure, plt.Axes}):
+                           end_time=None,start_prof=None, end_prof=None, ylim=35, **kw: dict, ) -> tuple({plt.Figure, plt.Axes}):
     """
     This function can be used to plot sections for any variable with the sunrise and sunset plotted over
     
@@ -337,21 +337,22 @@ def plot_quench_assess(ds: xr.Dataset, sel_var: str, ax: plt.Axes = None, start_
             raise ValueError(msg)
 
         sunrise, sunset = utilities.compute_sunset_sunrise(ds_sel.TIME, ds_sel.LATITUDE, ds_sel.LONGITUDE)
-
-        c = ax.scatter(ds_sel.TIME, ds_sel.DEPTH, c=ds_sel[sel_var], s=10, vmin=np.nanpercentile(ds_sel[sel_var], 0.5),
-                       vmax=np.nanpercentile(ds_sel[sel_var], 99.5))
+        surf_chla= ds_sel[sel_var].where(ds_sel[sel_var].DEPTH < ylim).dropna(dim='N_MEASUREMENTS')
+        logchla=np.log10(surf_chla.where((surf_chla>0)).dropna(dim='N_MEASUREMENTS'))
+        c = ax.scatter(logchla.TIME, logchla.DEPTH, c=logchla, s=10, vmin=np.nanpercentile(logchla, 0.5),
+                   vmax=np.nanpercentile(logchla, 99.5))
         ax.set_ylim(ylim, -ylim / 30)
         for n in np.unique(sunset):
             ax.axvline(np.unique(n), c='blue')
         for m in np.unique(sunrise):
             ax.axvline(np.unique(m), c='orange')
         ax.set_ylabel('Depth (m)')
-
+    
         # Set x-tick labels based on duration of the selection
         # Could pop out as a utility plotting function?
         utilities._time_axis_formatter(ax, ds_sel, format_x_axis=True)
-
-        plt.colorbar(c, label=f'{utilities.plotting_labels(sel_var)} ({utilities.plotting_units(ds,sel_var)})')
+    
+        plt.colorbar(c, label=f'log₁₀({utilities.plotting_labels(sel_var)}) ({utilities.plotting_units(ds,sel_var)})')
         plt.show()
     return fig, ax
 
