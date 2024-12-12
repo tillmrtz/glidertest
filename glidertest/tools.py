@@ -445,7 +445,7 @@ def find_outlier_duration(df: pd.DataFrame, rolling=20, std=2):
     overt_prof = df['profile_num'][overtime[0]].values
     if len(overtime[0]) > 0:
         print(
-            f'There are {len(overtime[0])} profiles where the duration differs by {std} standard deviations of the nearby {rolling} profiles have been detected. Further checks are recommended')
+            f'There are {len(overtime[0])} profiles where the duration differs by {std} standard deviations of the nearby {rolling} profiles. Further checks are recommended')
     return rolling_mean, overt_prof
 
 def compute_global_range(ds: xr.Dataset, var='DOXY', min_val=-5, max_val=600):
