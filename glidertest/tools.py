@@ -480,3 +480,25 @@ def compute_global_range(ds: xr.Dataset, var='DOXY', min_val=-5, max_val=600):
     out_range = ds[var].where((ds[var]<min_val )| (ds[var]>max_val ))
     return out_range.dropna(dim='N_MEASUREMENTS')
 
+def max_depth_per_profile(ds: xr.Dataset):
+    """
+    This function computes the maximum depth for each profile in the dataset
+
+    Parameters
+    ----------
+    ds: xarray on OG1 format containing at least depth and profile_number. Data
+    should not be gridded.
+
+    Returns
+    -------
+    max_depths: pandas dataframe containing the profile number and the maximum depth of that profile
+
+    Original author
+    ----------------
+    Till Moritz
+    """
+    max_depths = ds.groupby('profile_num').apply(lambda x: x['DEPTH'].max())
+    ### add the unit to the dataarray
+    max_depths.attrs['units'] = ds['DEPTH'].attrs['units']
+    return max_depths
+
