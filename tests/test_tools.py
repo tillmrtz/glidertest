@@ -58,3 +58,7 @@ def test_hyst():
 def test_sop():
     ds = fetchers.load_sample_dataset()
     tools.compute_global_range(ds, var='DOXY', min_val=-5, max_val=600)
+
+def test_maxdepth():
+    ds = fetchers.load_sample_dataset()
+    tools.max_depth_per_profile(ds)
