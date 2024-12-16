@@ -122,4 +122,4 @@ def test_plot_sampling_period_all():
 
 def test_plot_max_depth():
     ds = fetchers.load_sample_dataset()
-    plots.plot_max_depth(ds)
+    plots.plot_max_depth_per_profile(ds)
