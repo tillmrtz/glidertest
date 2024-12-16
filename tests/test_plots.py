@@ -125,3 +125,7 @@ def test_plot_sampling_period_all():
     ds = fetchers.load_sample_dataset()
     plots.plot_sampling_period_all(ds)
     plots.plot_sampling_period(ds, variable='CHLA')
+
+def test_plot_max_depth():
+    ds = fetchers.load_sample_dataset()
+    plots.plot_max_depth_per_profile(ds)
