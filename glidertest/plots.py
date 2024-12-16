@@ -1324,7 +1324,6 @@ def plot_max_depth_per_profile(ds: xr.Dataset, bins= 20, ax = None, **kw: dict) 
     Till Moritz
     """
     max_depths = tools.max_depth_per_profile(ds)
-    profile_nums = max_depths.profile_num
     with plt.style.context(glidertest_style_file):
         if ax is None:  
             fig, ax = plt.subplots(1, 2)  
@@ -1333,7 +1332,7 @@ def plot_max_depth_per_profile(ds: xr.Dataset, bins= 20, ax = None, **kw: dict) 
             fig = plt.gcf()
             force_plot = False
             
-        ax[0].plot(profile_nums, max_depths,**kw)
+        ax[0].plot(max_depths.profile_num, max_depths,**kw)
         ax[0].set_xlabel('Profile number')
         ax[0].set_ylabel(f'Max depth ({max_depths.units})')
         ax[0].set_title('Max depth per profile')
