@@ -13,7 +13,11 @@ authors:
   given-names: Chiara
   orcid: https://orcid.org/0009-0003-5019-3410
   affiliation: Institute of Oceanography, University of Hamburg, Bundesstraße 53, 20146 Hamburg, Germany
+- family-names: Clement
+  given-names: Louis
+  orcid: https://orcid.org/0000-0002-6935-9455
+  affiliation: National Oceanography Centre, Southampton, UK
 title: glidertest
 version: 0.0.1
 date-released: 2024-10-28
-url: https://github.com/callumrollo/glidertest
+url: https://github.com/OceanGlidersCommunity/glidertest

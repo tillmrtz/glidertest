@@ -273,3 +273,94 @@ def calc_DEPTH_Z(ds):
     }
     
     return ds
+
+label_dict={
+    "PSAL": {
+        "label": "Practical salinity",
+        "units": "PSU"},
+    "TEMP": {
+        "label": "Temperature",
+        "units": "°C"},
+    "DENSITY":{
+        "label": "In situ density",
+        "units": "kg m⁻³"
+    },
+    "DOXY": {
+        "label": "Dissolved oxygen",
+        "units": "mmol m⁻³"
+    },
+    "SA":{
+        "label": "Absolute salinity",
+        "units": "g kg⁻¹"
+    },
+    "CHLA":{
+        "label": "Chlorophyll",
+        "units": "mg m⁻³"
+    },
+    "CNDC":{
+        "label": "Conductivity",
+        "units": "mS cm⁻¹"
+    },
+    "DPAR":{
+        "label": "Irradiance PAR",
+        "units": "μE cm⁻² s⁻¹"
+    },
+    "BBP700":{
+        "label": "Red backscatter, b${bp}$(700)",
+        "units": "m⁻¹"
+    }
+}
+
+def plotting_labels(var: str):
+    """
+    Retrieves the label associated with a variable from a predefined dictionary.
+
+    This function checks if the given variable `var` exists as a key in the `label_dict` dictionary.
+    If found, it returns the associated label from `label_dict`. If not, it returns the variable name itself as the label.
+
+    Parameters
+    ----------
+    var (str): The variable (key) whose label is to be retrieved.
+
+    Returns:
+    ----------
+    str: The label corresponding to the variable `var`. If the variable is not found in `label_dict`,
+             the function returns the variable name as the label.
+
+    Original author:
+    ----------
+    Chiara Monforte
+    """
+    if var in label_dict:
+        label = f'{label_dict[var]["label"]}'
+    else:
+        label= f'{var}'
+    return label
+def plotting_units(ds: xr.Dataset,var: str):
+    """
+    Retrieves the units associated with a variable from a dataset or a predefined dictionary.
+
+    This function checks if the given variable `var` exists as a key in the `label_dict` dictionary.
+    If found, it returns the associated units from `label_dict`. If not, it returns the units of the variable
+    from the dataset `ds` using the `var` key.
+
+    Parameters
+    ----------
+    ds (xarray.Dataset or similar): The dataset containing the variable `var`.
+    var (str): The variable (key) whose units are to be retrieved.
+
+    Returns:
+    ----------
+    str: The units corresponding to the variable `var`. If the variable is found in `label_dict`,
+         the associated units will be returned. If not, the function returns the units from `ds[var]`.
+
+    Original author:
+    ----------
+    Chiara Monforte
+    """
+    if var in label_dict:
+        return f'{label_dict[var]["units"]}'
+    elif 'units' in ds[var].attrs:
+        return f'{ds[var].units}'
+    else:
+        return ""
