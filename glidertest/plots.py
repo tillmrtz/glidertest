@@ -69,7 +69,7 @@ def plot_updown_bias(ds: xr.Dataset, var='TEMP', v_res=1, ax: plt.Axes = None, *
             plt.show()
         return fig, ax
 
-def plot_basic_vars(ds: xr.Dataset, v_res=1, start_prof=0, end_prof=-1):
+def plot_basic_vars(ds: xr.Dataset, v_res=1, start_prof=0, end_prof=-1, ax=None):
     """
     This function plots the basic oceanographic variables temperature, salinity and density. A second plot is created and filled with oxygen and 
     chlorophyll data if available.
@@ -108,7 +108,13 @@ def plot_basic_vars(ds: xr.Dataset, v_res=1, start_prof=0, end_prof=-1):
     with plt.style.context(glidertest_style_file):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=RuntimeWarning)
-            fig, ax = plt.subplots(1, 2)
+            if ax is None:
+                fig, ax = plt.subplots(1,2)
+                force_plot = True
+            else:
+                fig = plt.gcf()
+                force_plot = False
+
             # Resize to half-width
             half_width = fig.get_size_inches()[0] / 2.07
             fig.set_size_inches(half_width, half_width * 0.85)
@@ -162,7 +168,8 @@ def plot_basic_vars(ds: xr.Dataset, v_res=1, start_prof=0, end_prof=-1):
                 ax[1].text(0.3, 0.5, 'Oxygen data unavailable', va='top', transform=ax[1].transAxes)
             [a.set_ylim(depthG.max(), 0) for a in ax]
             [a.grid() for a in ax]
-            plt.show()
+            if force_plot:
+                plt.show()
     return fig, ax
 
 
