@@ -69,7 +69,7 @@ def plot_updown_bias(ds: xr.Dataset, var='TEMP', v_res=1, ax: plt.Axes = None, *
             plt.show()
         return fig, ax
 
-def plot_basic_vars(ds: xr.Dataset, v_res=1, start_prof=0, end_prof=-1):
+def plot_basic_vars(ds: xr.Dataset, v_res=1, start_prof=0, end_prof=-1, ax=None):
     """
     This function plots the basic oceanographic variables temperature, salinity and density. A second plot is created and filled with oxygen and 
     chlorophyll data if available.
