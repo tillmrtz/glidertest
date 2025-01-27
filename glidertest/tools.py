@@ -7,7 +7,6 @@ import gsw
 import warnings
 from glidertest import utilities
 
-
 def quant_updown_bias(ds, var='PSAL', v_res=1):
     """
     This function computes up and downcast averages for a specific variable
@@ -497,7 +496,7 @@ def max_depth_per_profile(ds: xr.Dataset):
     ----------------
     Till Moritz
     """
-    max_depths = ds.groupby('profile_num').apply(lambda x: x['DEPTH'].max())
+    max_depths = ds.groupby('PROFILE_NUMBER').apply(lambda x: x['DEPTH'].max())
     ### add the unit to the dataarray
     max_depths.attrs['units'] = ds['DEPTH'].attrs['units']
     return max_depths
