@@ -489,6 +489,12 @@ def plot_glider_track(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict) -> tuple(
         longitudes = ds.LONGITUDE.values
         times = ds.TIME.values
 
+        # Drop NaN values
+        valid_indices = ~np.isnan(latitudes) & ~np.isnan(longitudes) & ~np.isnan(times)
+        latitudes = latitudes[valid_indices]
+        longitudes = longitudes[valid_indices]
+        times = times[valid_indices]
+
         # Reduce the number of latitudes, longitudes, and times to no more than 2000
         if len(latitudes) > 2000:
             indices = np.linspace(0, len(latitudes) - 1, 2000).astype(int)
