@@ -6,7 +6,6 @@ on:
       - '**.py'
       - '**.ipynb'
 
-
 jobs:
   run:
     runs-on: ${{ matrix.os }}
@@ -20,7 +19,8 @@ jobs:
         shell: bash -l {0}
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
     - name: Setup Micromamba Python ${{ matrix.python-version }}
       uses: mamba-org/setup-micromamba@v2
@@ -36,4 +36,4 @@ jobs:
 
     - name: Full Tests
       run: |
-        python -m pytest --cov=glidertest --cov-report term-missing  tests/
+        python -m pytest -v --cov=glidertest --cov-report term-missing tests/
