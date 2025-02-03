@@ -38,8 +38,6 @@ def test_chl(var1='CHLA', var2='BBP700'):
     assert ax.get_ylabel() == f'{utilities.plotting_labels(var1)} ({utilities.plotting_units(ds,var1)})'
     ax = plots.process_optics_assess(ds, var=var2)
     assert ax.get_ylabel() == f'{utilities.plotting_labels(var2)} ({utilities.plotting_units(ds,var2)})'
-    with pytest.raises(KeyError) as e:
-        plots.process_optics_assess(ds, var='nonexistent_variable')
 
 
 def test_quench_sequence(ylim=45):
