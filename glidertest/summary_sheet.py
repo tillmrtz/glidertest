@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from glidertest import tools, plots
+import glidertest
 from ioos_qc import qartod
 import cartopy.crs as ccrs
 from matplotlib.font_manager import FontProperties
@@ -214,7 +215,7 @@ def summary_plot(ds, save_dir='.', test=True):
     newax = fig.add_axes([0.88, -0.03, 0.1, 0.1], anchor='NE')
     newax.imshow(im)
     newax.axis('off')
-    ax.text(0.78, -0.11, 'Created with Glidertest', transform=ax.transAxes, fontsize=font_size - 3,
+    ax.text(0.78, -0.11, f'Created with glidertest v{glidertest.__version__}', transform=ax.transAxes, fontsize=font_size - 3,
             verticalalignment='top')
 
     # Add glider track plot
