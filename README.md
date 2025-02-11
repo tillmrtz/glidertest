@@ -41,6 +41,8 @@ All contributions are welcome! See [contributing](CONTRIBUTING.md) for more deta
 To install a local, development version of glidertest, clone the repo, open a terminal in the root directory (next to this readme file) and run these commands:
 
 ```sh
+git clone https://github.com/OceanGlidersCommunity/glidertest.git
+cd glidertest
 pip install -r requirements-dev.txt
 pip install -e . 
 ```
