@@ -46,6 +46,8 @@ pip install -e .
 ```
 This installs glidertest locally. -e ensures that any edits you make in the files will be picked up by scripts that import functions from glidertest.
 
+You can run the example jupyter notebook by launching jupyterlab with `jupyter-lab` and navigating to the `notebooks` directory.
+
 All new functions should include tests, you can run the tests locally and generate a coverage report with:
 
 ```sh
