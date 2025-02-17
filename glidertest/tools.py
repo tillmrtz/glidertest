@@ -13,18 +13,22 @@ def quant_updown_bias(ds, var='PSAL', v_res=1):
 
     Parameters
     ----------
-    ds: xarray on OG1 format containing at least time, depth, latitude, longitude and the selected variable. 
-        Data should not be gridded.
-    var: Selected variable
-    v_res: Vertical resolution for the gridding
+    ds: Dataset.xarray 
+        Dataset in **OG1 format**, containing at least **TIME, DEPTH, LATITUDE, LONGITUDE,** and the selected variable.  
+        Data should **not** be gridded.
+    var: str, optional, default='PSAL'
+        Selected variable.
+    v_res: float
+        Vertical resolution for the gridding in meters.
                 
     Returns
     -------
-    df: pandas dataframe containing dc (Dive - Climb average), cd (Climb - Dive average) and depth
+    df: pandas.DataFrame 
+        Dataframe containing dc (Dive - Climb average), cd (Climb - Dive average) and depth
 
-    Original author
-    ----------------
-    Chiara Monforte
+    Notes
+    -----
+    Original Author: Chiara Monforte
     """
     utilities._check_necessary_variables(ds, ['PROFILE_NUMBER', 'DEPTH', var])
     p = 1  # Horizontal resolution
@@ -47,43 +51,46 @@ def quant_updown_bias(ds, var='PSAL', v_res=1):
 
 def compute_daynight_avg(ds, sel_var='CHLA', start_time=None, end_time=None, start_prof=None, end_prof=None):
     """
-    This function computes night and day averages for a selected variable over a specific period of time or a specific series of dives
-    Data in divided into day and night using the sunset and sunrise time as described in the above function sunset_sunrise from GliderTools
+    Computes day and night averages for a selected variable over a specified time period or range of dives.  
+    Day and night are determined based on **sunrise and sunset times** from the `compute_sunset_sunrise` function in GliderTools.  
+    A sufficient number of dives is required to ensure both **day and night data** are present; otherwise, the function will not run.  
+
     Parameters
     ----------
-    ds: xarray on OG1 format containing at least time, depth, latitude, longitude and the selected variable. 
-        Data should not be gridded.
-    sel_var: variable to use to compute the day night averages
-    start_time: Start date of the data selection. As missions can be long and can make it hard to visualise NPQ effect,
-                we recommend selecting small section of few days to a few weeks. Defaults to the central week of the deployment
-    end_time: End date of the data selection. As missions can be long and can make it hard to visualise NPQ effect,
-                we recommend selecting small section of few days to a few weeks. Defaults to the central week of the deployment
-    start_prof: Start profile of the data selection. If no profile is specified, the specified time selection will be used
-                or the central week of the deployment.
-                It is important to have a large enough number of dives to have some day and night data otherwise the function will not run
-    end_prof:  End profile of the data selection. If no profile is specified, the specified time selection will be used
-            or the central week of the deployment.
-    It is important to have a large enough number of dives to have some day and night data otherwise the function will not run
-                
+    ds : xarray.Dataset  
+        Dataset in **OG1 format**, containing at least **TIME, DEPTH, LATITUDE, LONGITUDE,** and the selected variable.  
+        Data should **not** be gridded.  
+    sel_var : str, optional, default='CHLA'  
+        The variable for which day and night averages will be computed.  
+    start_time : str or datetime-like, optional  
+        The **start date** for data selection.  
+        - If not specified, defaults to the **central week of the deployment**.  
+        - Selecting a smaller section (a few days to weeks) is recommended for better visualization of NPQ effects.  
+    end_time : str or datetime-like, optional  
+        The **end date** for data selection.  
+        - If not specified, defaults to the **central week of the deployment**.  
+    start_prof : int, optional  
+        The **starting profile number** for data selection.  
+        - If not specified, the function uses `start_time` or defaults to the **central week of deployment**.  
+        - A sufficient number of dives is required for valid day and night separation.  
+    end_prof : int, optional  
+        The **ending profile number** for data selection.  
+        - If not specified, the function uses `end_time` or defaults to the **central week of deployment**.  
+
     Returns
     -------
-    day_av: pandas.Dataframe
-        A dataframe with the day averages of the selected variable with the following columns:
-            batch: Number representing the grouping for each day. This number can represent the number of the day in chronological order
-            depth: Depth values for the average
-            dat: Average value for the selected variable
-            day: Actual date for the batch 
-    night_av: pandas.Dataframe
-        A dataframe with the night averages of the selected variable with the following columns:
-            batch: Number representing the grouping for each day. This number can represent the number of the day in chronological order
-            depth: Depth values for the average
-            dat: Average value for the selected variable
-            day: Actual date for the batch 
-    
-    Original author
-    ----------------
-    Chiara Monforte
+    day_av : pandas.DataFrame  
+        DataFrame containing **daytime averages** of the selected variable with the following columns:  
+        - `batch` : Integer representing the grouped day-night cycles (e.g., chronological day number).  
+        - `depth` : Depth values for the average calculation.  
+        - `dat` : Average value of the selected variable.  
+        - `date` : Actual date corresponding to the batch.  
+    night_av : pandas.DataFrame  
+        DataFrame containing **nighttime averages** of the selected variable with the same columns as for day_av
 
+    Notes
+    ------
+    Original Author: Chiara Monforte  
     """
     utilities._check_necessary_variables(ds, ['TIME', sel_var, 'DEPTH'])
     if "TIME" not in ds.indexes.keys():
@@ -126,21 +133,24 @@ def compute_daynight_avg(ds, sel_var='CHLA', start_time=None, end_time=None, sta
 
 def check_monotony(da):
     """
-    This function check weather the selected variable over the mission is monotonically increasing or not. This is developed in particular for profile number.
-    If the profile number is not monotonically increasing, this may mean that whatever function was used to assign the profile number may have misassigned at some points.
-    
+    Checks whether the selected variable is **monotonically increasing** throughout the mission.  
+    This function is particularly designed to check **profile numbers** to ensure they are assigned correctly.  
+    If the profile number is not monotonically increasing, it may indicate misassignment due to an error in data processing.  
+
     Parameters
     ----------
-    da: xarray.DataArray on OG1 format. Data should not be gridded.
+    da: xarray.DataArray   
+        DataArray in **OG1 format**. Data should **not** be gridded. 
 
     Returns
     -------
-    It will print a sentence stating whether data is
+    bool:
+        **True** if the variable is monotonically increasing, else **False**. 
+        Additionally, a message is printed indicating the result.  
 
-    Original author
-    ----------------
-    Chiara Monforte
-
+    Notes
+    ------
+    Original Author: Chiara Monforte
     """
     if not pd.Series(da).is_monotonic_increasing:
         print(f'{da.name} is not always monotonically increasing')
@@ -151,22 +161,21 @@ def check_monotony(da):
 
 def calc_w_meas(ds):
     """
-    Calculate the vertical velocity of a glider using changes in pressure with time.
+    Calculates the vertical velocity of a glider using changes in pressure with time.
 
     Parameters
     ----------
-    ds (xarray.Dataset): Dataset containing 'DEPTH' and 'TIME'.
-    - DEPTH (array-like): Array of depth measurements
-    - TIME (array-like): Array of time stamps
+    ds: xarray.Dataset
+        Dataset containing **DEPTH** and **TIME**.
     
     Returns
     -------
-    ds (xarray.Dataset): Containing the new variable
-    - GLIDER_VERT_VELO_DZDT (array-like): with vertical velocities calculated from dz/dt
+    ds: xarray.Dataset 
+        Containing the new variable **GLIDER_VERT_VELO_DZDT** (array-like), with vertical velocities calculated from dz/dt
 
-    Original author
-    ----------------
-    Eleanor Frajka-Williams
+    Notes
+    ------
+    Original Author: Eleanor Frajka-Williams
     """
     utilities._check_necessary_variables(ds, ['TIME'])
     # Ensure inputs are numpy arrays
@@ -206,19 +215,18 @@ def calc_w_sw(ds):
 
     Parameters
     ----------
-    ds (xarray.Dataset): Dataset containing 'VERT_GLIDER_SPEED' and 'VERT_SPEED_DZDT'.
+    ds: xarray.Dataset 
+        Dataset containing **VERT_GLIDER_SPEED** and **VERT_SPEED_DZDT**.
 
     Returns
     -------
-    ds (xarray.Dataset): Dataset with the new variable 'VERT_SW_SPEED', which is the inferred vertical seawater velocity.
+    ds: xarray.Dataset 
+        Dataset with the new variable **VERT_SW_SPEED**, which is the inferred vertical seawater velocity.
 
-    Note
+    Notes
     -----
-    This could be bundled with calc_glider_w_from_depth, but keeping them separate allows for some extra testing/flexibility for the user. 
-
-    Original author
-    ----------------
-    Eleanor Frajka-Williams
+    - This could be bundled with calc_glider_w_from_depth, but keeping them separate allows for some extra testing/flexibility for the user.
+    Original Author: Eleanor Frajka-Williams
     """
     # Eleanor's note: This could be bundled with calc_glider_w_from_depth, but keeping them separate allows for some extra testing/flexibility for the user. 
     utilities._check_necessary_variables(ds, ['GLIDER_VERT_VELO_MODEL', 'GLIDER_VERT_VELO_DZDT'])
@@ -240,21 +248,22 @@ def quant_binavg(ds, var='VERT_CURR', zgrid=None, dz=None):
 
     Parameters
     ----------
-    - ds using the variables PRES and VERT_SW_SPEED
-    - zgrid (array-like, optional): Depth grid for binning. If None, a default grid is created.
-    - dz (float, optional): Interval for creating depth grid if zgrid is not provided.
+    ds: xarray.Dataset 
+        Dataset containing the variables **PRES** and **VERT_SW_SPEED**
+    zgrid:  array-like, optional 
+        Depth grid for binning. If None, a default grid is created.
+    dz: float, optional 
+        Interval for creating depth grid if zgrid is not provided.
 
     Returns
     -------
-    - meanw (array-like): Bin-averaged vertical velocities for each depth bin.
+    meanw: array-like 
+        Bin-averaged vertical velocities for each depth bin.
 
-    Note
+    Notes
     ----
-    I know this is a non-sensical name.  We should re-name, but is based on advice from Ramsey Harcourt.
-
-    Original author
-    ----------------
-    Eleanor Frajka-Williams
+    - I know this is a non-sensical name.  We should re-name, but is based on advice from Ramsey Harcourt.
+    Original Author: Eleanor Frajka-Williams
     """
     utilities._check_necessary_variables(ds, [var, 'PRES'])
     press = ds.PRES.values
@@ -341,18 +350,22 @@ def quant_hysteresis(ds: xr.Dataset, var='DOXY', v_res=1):
 
     Parameters
     ----------
-    ds: xarray on OG1 format containing at least depth, profile_number and the selected variable.
-        Data should not be gridded.
-    var: Selected variable
-    v_res: Vertical resolution for the gridding
+    ds: xarray.Dataset 
+        Dataset in **OG1 format**, containing at least **DEPTH, PROFILE_NUMBER,** and the selected variable.  
+        Data should **not** be gridded.
+    var: str, optional, default='DOXY' 
+        Selected variable
+    v_res: float
+        Vertical resolution for the gridding in meters.
 
     Returns
     -------
-   df: pandas dataframe containing dive and climb average over depth for the selected variable. A third column contains the depth values
+    df: pandas.DataFrame 
+        Dataframe containing dive and climb average over depth for the selected variable. A third column contains the depth values
 
-    Original author
-    ----------------
-    Chiara Monforte
+    Notes
+    ------
+    Original Author: Chiara Monforte
     """
     utilities._check_necessary_variables(ds, ['PROFILE_NUMBER', 'DEPTH', var])
     p = 1  # Horizontal resolution
@@ -372,20 +385,30 @@ def compute_hyst_stat(ds: xr.Dataset, var='DOXY', v_res=1):
 
     Parameters
     ----------
-    ds: xarray on OG1 format containing at least depth, profile_number and the selected variable. Data should not be gridded.
-    var: Selected variable
-    v_res: Vertical resolution for the gridding
+    ds: xarray.Dataset 
+        Dataset in **OG1 format**, containing at least **DEPTH, PROFILE_NUMBER,** and the selected variable.
+        Data should not be gridded.
+    var: str, optional, default='DOXY' 
+        Selected variable
+    v_res: float
+        Vertical resolution for the gridding
 
     Returns
     -------
-    diff: difference between upcast and downcast
-    err: Percentage error of the dive-climb difference. One value per depth step
-    rms: Root Mean Square of the difference in values between dive and climb
-    df: pandas dataframe containing dive and climb average over depth for the selected variable. A third column contains the depth values
+    diff : array-like  
+        Difference between upcast and downcast values.  
+    err : array-like  
+        Percentage error of the dive-climb difference, computed for each depth step.  
+    rms : float  
+        Root Mean Square (RMS) of the difference in values between dive and climb.  
+    df : pandas.DataFrame  
+        DataFrame containing:  
+        - **Dive and climb averages** over depth for the selected variable.  
+        - **Depth values** in a separate column.  
 
-    Original author
-    ----------------
-    Chiara  Monforte
+    Notes
+    ------
+    Original Author: Chiara  Monforte
     """
     df = quant_hysteresis(ds, var=var, v_res=v_res)
     with warnings.catch_warnings():
@@ -398,19 +421,22 @@ def compute_hyst_stat(ds: xr.Dataset, var='DOXY', v_res=1):
 
 def compute_prof_duration(ds:xr.Dataset):
     """
-    This function computes some basic statistics for the differences between climb and dive data
+    This function computes some basic statistics for the differences between climb and dive data.
 
     Parameters
     ----------
-    ds: xarray on OG1 format containing at least time and profile_number. Data should not be gridded.
+    ds: xarray.Dataset 
+        Dataset in **OG1 format**, containing at least **DEPTH, PROFILE_NUMBER,** and the selected variable.
+        Data should not be gridded.
 
     Returns
     -------
-    df: pandas dataframe containing the profile number and the duration of that profile in minutes
+    df: pandas.DataFrame 
+        Dataframe containing the profile number and the duration of that profile in minutes
 
-    Original author
-    ----------------
-    Chiara  Monforte
+    Notes
+    ------
+    Original Author: Chiara  Monforte
     """
     utilities._check_necessary_variables(ds, ['PROFILE_NUMBER', 'TIME'])
     deltat = ds.TIME.groupby(ds.PROFILE_NUMBER).max() - ds.TIME.groupby(ds.PROFILE_NUMBER).min()
@@ -420,23 +446,29 @@ def compute_prof_duration(ds:xr.Dataset):
 
 def find_outlier_duration(df: pd.DataFrame, rolling=20, std=2):
     """
-    This function computes some basic statistics for the differences between climb and dive data
+    Identifies **outlier profile durations** based on a rolling mean and standard deviation threshold.  
+    This helps detect profiles with significantly longer or shorter durations compared to surrounding profiles. 
 
     Parameters
     ----------
-    df: pandas dataframe containing the profile number and the duration of that profile in minutes
-    rolling: window size for the rolling mean
-    std: number of standard deviations to use for 'odd' profile duration
+    df: pandas.DataFrame 
+        Dataframr containing the profile number and the duration of that profile in minutes
+    rolling: int, default = 20
+        Window size for the rolling mean
+    std: int, default = 2
+        Number of standard deviations to use for 'odd' profile duration
 
     Returns
     -------
-    The function prints a statement in case there are profiles with 'odd' duration,
-    rolling_mean: Rolling mean of profile duration computed with the set window
-    overt_prof: Profiles where the duration is above the set rolling mean with added standard deviation
+    rolling_mean : pandas.Series  
+        Rolling mean of **profile duration** computed using the specified window size.  
+    overt_prof : numpy.ndarray  
+        Array of **profile numbers** where the duration exceeds the rolling mean by more than the set **standard deviation threshold**.  
+        - If outliers are found, a message is printed recommending further investigation. 
 
-    Original author
-    ----------------
-    Chiara  Monforte
+    Notes
+    ------
+    Original Author: Chiara  Monforte
     """
     rolling_mean = df['profile_duration'].rolling(window=rolling, min_periods=1).mean()
     overtime = np.where((df['profile_duration'] > rolling_mean + (np.std(rolling_mean) * std)) | (
@@ -457,23 +489,24 @@ def compute_global_range(ds: xr.Dataset, var='DOXY', min_val=-5, max_val=600):
 
     Parameters
     ----------
-    ds : The xarray Dataset containing the variable to be filtered.
-
-    var : The name of the variable to apply the range filter on. Default is 'DOXY'.
-
-    min_val : The minimum allowable value for the variable. Default is -5.
-
-    max_val : The maximum allowable value for the variable. Default is 600.
+    ds : xarray.Dataset 
+        Dataset containing the variable to be filtered.
+    var : str, optional, default='DOXY' 
+        The name of the variable to apply the range filter on.
+    min_val : float, default = -5
+        The minimum allowable value for the variable.
+    max_val : float, default = 600
+        The maximum allowable value for the variable.
 
     Returns
     -------
-    xarray.DataArray
+    xarray.DataArray : 
         A filtered DataArray containing only the values of the specified variable
         within the range `[min_val, max_val]`. Values outside this range are dropped.
 
-    Original author
-    ----------------
-    Chiara Monforte
+    Notes
+    ------
+    Original Author: Chiara Monforte
     """
     utilities._check_necessary_variables(ds, [var])
     out_range = ds[var].where((ds[var]<min_val )| (ds[var]>max_val ))
@@ -485,16 +518,17 @@ def max_depth_per_profile(ds: xr.Dataset):
 
     Parameters
     ----------
-    ds: xarray on OG1 format containing at least depth and profile_number. Data
-    should not be gridded.
+    ds: xarray.Dataset 
+        Dataset in **OG1 format**, containing at least **DEPTH, PROFILE_NUMBER,** and the selected variable.
+        Data should not be gridded.
 
     Returns
     -------
     max_depths: pandas dataframe containing the profile number and the maximum depth of that profile
 
-    Original author
-    ----------------
-    Till Moritz
+    Notes
+    ------
+    Original Author: Till Moritz
     """
     max_depths = ds.groupby('PROFILE_NUMBER').apply(lambda x: x['DEPTH'].max())
     ### add the unit to the dataarray

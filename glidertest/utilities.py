@@ -12,20 +12,23 @@ import matplotlib.dates as mdates
 
 def _check_necessary_variables(ds: xr.Dataset, vars: list):
     """
-    Checks that all of a list of variables are present in a dataset
+    Checks that all of a list of variables are present in a dataset.
 
     Parameters
     ----------
-    ds (xarray.Dataset): _description_
-    vars (list): _description_
+    ds: xarray.Dataset
+        Dataset that should be checked
+    vars: list
+        List of variables
 
     Raises
-    ----------
-    KeyError: Raises an error if all vars not present in ds
+    ------
+    KeyError:
+        Raises an error if all vars not present in ds
 
-    Original author
-    ----------------
-    Callum Rollo
+    Notes
+    -----
+    Original Author: Callum Rollo
     """
     missing_vars = set(vars).difference(set(ds.variables))
     if missing_vars:
@@ -79,27 +82,36 @@ def _time_axis_formatter(ax, ds, format_x_axis=True):
         
 def construct_2dgrid(x, y, v, xi=1, yi=1):
     """
-    Function to grid data
-    
+    Constructs a 2D gridded representation of input data based on specified resolutions.
+
     Parameters
     ----------
-    x: data with data for the x dimension
-    y: data with data for the y dimension
-    v: data with data for the z dimension
-    xi: Horizontal resolution for the gridding
-    yi: Vertical resolution for the gridding
-                
+    x : array-like  
+        Input data representing the x-dimension.  
+    y : array-like  
+        Input data representing the y-dimension.  
+    v : array-like  
+        Input data representing the z-dimension (values to be gridded).  
+    xi : int or float, optional, default=1  
+        Resolution for the x-dimension grid spacing.  
+    yi : int or float, optional, default=1  
+        Resolution for the y-dimension grid spacing.  
+
     Returns
     -------
-    grid: z data gridded in x and y space with xi and yi resolution
-    XI: x data gridded in x and y space with xi and yi resolution
-    YI: y data gridded in x and y space with xi and yi resolution
+    grid : numpy.ndarray  
+        Gridded representation of the z-values over the x and y space.  
+    XI : numpy.ndarray  
+        Gridded x-coordinates corresponding to the specified resolution.  
+    YI : numpy.ndarray  
+        Gridded y-coordinates corresponding to the specified resolution. 
 
-    Original author
-    ----------------
-    Bastien Queste (https://github.com/bastienqueste/gliderad2cp/blob/de0652f70f4768c228f83480fa7d1d71c00f9449/gliderad2cp/process_adcp.py#L140)
-    
+    Notes
+    -----
+    Original Author: Bastien Queste  
+    [Source Code](https://github.com/bastienqueste/gliderad2cp/blob/de0652f70f4768c228f83480fa7d1d71c00f9449/gliderad2cp/process_adcp.py#L140)  
     """
+
     if np.size(xi) == 1:
         xi = np.arange(np.nanmin(x), np.nanmax(x) + xi, xi)
     if np.size(yi) == 1:
@@ -122,7 +134,6 @@ def compute_sunset_sunrise(time, lat, lon):
     rather than day or night indices, as it is more flexible for the quenching
     correction.
 
-
     Parameters
     ----------
     time: numpy.ndarray or pandas.Series
@@ -139,10 +150,10 @@ def compute_sunset_sunrise(time, lat, lon):
     sunset: numpy.ndarray
         An array of the sunset times.
 
-    Original author
-    ----------------
-    Function from GliderTools (https://github.com/GliderToolsCommunity/GliderTools/blob/master/glidertools/optics.py)
-
+    Notes
+    -----
+    Original Author: Function from GliderTools 
+    [Source Code](https://github.com/GliderToolsCommunity/GliderTools/blob/master/glidertools/optics.py)
     """
 
     ts = api.load.timescale()
@@ -245,15 +256,17 @@ def calc_DEPTH_Z(ds):
     
     Parameters
     ----------
-    ds (xarray.Dataset): The input dataset containing 'PRES', 'LATITUDE', and 'LONGITUDE' variables.
+    ds: xarray.Dataset
+        The input dataset containing 'PRES', 'LATITUDE', and 'LONGITUDE' variables.
     
     Returns
     -------
-    xarray.Dataset: The dataset with an additional 'DEPTH_Z' variable.
+    xarray.Dataset: 
+        The dataset with an additional 'DEPTH_Z' variable.
 
-    Original author
-    ----------------
-    Eleanor Frajka-Williams
+    Notes
+    -----
+    Original Author: Eleanor Frajka-Williams
     """
     _check_necessary_variables(ds, ['PRES', 'LONGITUDE', 'LATITUDE'])
 
@@ -324,16 +337,18 @@ def plotting_labels(var: str):
 
     Parameters
     ----------
-    var (str): The variable (key) whose label is to be retrieved.
+    var: str
+        The variable (key) whose label is to be retrieved.
 
-    Returns:
-    ----------
-    str: The label corresponding to the variable `var`. If the variable is not found in `label_dict`,
-             the function returns the variable name as the label.
+    Returns
+    -------
+    str: 
+        The label corresponding to the variable `var`. If the variable is not found in `label_dict`,
+        the function returns the variable name as the label.
 
-    Original author:
-    ----------
-    Chiara Monforte
+    Notes
+    -----
+    Original Author: Chiara Monforte
     """
     if var in label_dict:
         label = f'{label_dict[var]["label"]}'
@@ -350,17 +365,20 @@ def plotting_units(ds: xr.Dataset,var: str):
 
     Parameters
     ----------
-    ds (xarray.Dataset or similar): The dataset containing the variable `var`.
-    var (str): The variable (key) whose units are to be retrieved.
+    ds: xarray.Dataset
+        The dataset containing the variable `var`.
+    var: str 
+        The variable (key) whose units are to be retrieved.
 
-    Returns:
-    ----------
-    str: The units corresponding to the variable `var`. If the variable is found in `label_dict`,
-         the associated units will be returned. If not, the function returns the units from `ds[var]`.
+    Returns
+    -------
+    str: 
+        The units corresponding to the variable `var`. If the variable is found in `label_dict`,
+        the associated units will be returned. If not, the function returns the units from `ds[var]`.
 
-    Original author:
-    ----------
-    Chiara Monforte
+    Notes
+    -----
+    Original Author: Chiara Monforte
     """
     if var in label_dict:
         return f'{label_dict[var]["units"]}'
