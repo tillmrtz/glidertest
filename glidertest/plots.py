@@ -25,19 +25,28 @@ def plot_updown_bias(ds: xr.Dataset, var='TEMP', v_res=1, ax: plt.Axes = None, *
     
     Parameters
     ----------
-    ds: xarray on OG1 format containing at least time, depth, latitude, longitude and the selected variable.
+    ds: xarray.Dataset 
+        Dataset in **OG1 format**, containing at least **TIME, DEPTH, LATITUDE, LONGITUDE,** and the selected variable.
         Data should not be gridded.
-    var: Selected variable
-    v_res: Vertical resolution for the gridding
-    ax: axis to plot the data
-    
+    var: str, optional, default='TEMP'
+        Selected variable
+    v_res: float, default = 1
+        Vertical resolution for the gridding
+    ax: matplotlib.axes.Axes, default = None
+        Axis to plot the data
+    **kw : dict, optional  
+    Additional keyword arguments passed to `matplotlib.pyplot.plot()`.  
+
     Returns
     -------
-    A line plot comparing the climb and dive average over depth
+    fig : matplotlib.figure.Figure  
+        Figure object containing the generated plot.  
+    ax : matplotlib.axes.Axes  
+        Axes object with the plotted **climb vs. dive differences** over depth. 
 
-    Original author
-    ----------------
-    Chiara Monforte
+    Notes
+    -----
+    Original Author: Chiara Monforte
     """
     with plt.style.context(glidertest_style_file):
         if ax is None:
@@ -76,20 +85,29 @@ def plot_basic_vars(ds: xr.Dataset, v_res=1, start_prof=0, end_prof=-1):
     
     Parameters
     ----------
-    ds: xarray in OG1 format containing at least temperature, salinity and density and depth
-    v_res: vertical resolution for the gridding. Horizontal resolution (by profile) is assumed to be 1
-    start_prof: start profile used to compute the means that will be plotted. This can vary in case the dataset spread over a large timescale
-                or region and subsections want to be plotted-1     
-    end_prof: end profile used to compute the means that will be plotted. This can vary in case the dataset spread over a large timescale
-              or region and subsections want to be plotted-1          
-    
+    ds: xarray 
+        Dataset in **OG1 format**, containing at least **PROFILE_NUMBER, DEPTH, TEMP, PSAL, LATITUDE, LONGITUDE,** and the selected variable.
+    v_res: float, default = 1
+        Vertical resolution for the gridding. Horizontal resolution (by profile) is assumed to be 1
+    start_prof: int
+        Start profile used to compute the means that will be plotted. This can vary in case the dataset spread over a large timescale
+        or region and subsections want to be plotted-1     
+    end_prof: int
+        End profile used to compute the means that will be plotted. This can vary in case the dataset spread over a large timescale
+        or region and subsections want to be plotted-1          
+    **kw : dict, optional  
+        Additional keyword arguments passed to `matplotlib.pyplot.plot()`.  
+
     Returns
     -------
-    Line plots for the averages of the different variables.
+    fig : matplotlib.figure.Figure  
+        Figure object containing the generated plot.  
+    ax : matplotlib.axes.Axes  
+        Axes object with the plotted variables **temperature, salinity and density** over depth. 
     
-    Original author
-    ----------------
-    Chiara Monforte
+    Notes
+    -----
+    Original Author: Chiara Monforte
     """
     utilities._check_necessary_variables(ds, ['PROFILE_NUMBER', 'DEPTH', 'TEMP', 'PSAL', 'LATITUDE', 'LONGITUDE'])
     ds = utilities._calc_teos10_variables(ds)
@@ -172,17 +190,28 @@ def process_optics_assess(ds, var='CHLA'):
     
     Parameters
     ----------
-    ds: xarray dataset in OG1 format containing at least time, depth and the selected optical variable
-    var: name of the selected variable         
+    ds: xarray.Dataset
+        Dataset in **OG1 format**, containing at least **TIME, DEPTH,** and the selected variable.
+    var: str, optional, default='CHLA'
+        Selected variable        
     
     Returns
     -------
-    Text giving info on where and when negative data was observed
-    Plot showing bottom data with a linear regression line to highlight any drift 
+    ax : matplotlib.axes.Axes  
+        A plot of deep optical data with a **linear regression line** to highlight potential drift.  
+    text_output : str  
+        Text displaying where and when negative values are present in the dataset.
 
-    Original author
-    ----------------
-    Chiara Monforte
+    Returns
+    -------
+    ax : matplotlib.axes.Axes  
+        Axes object with 
+    text_output: str
+        Text giving info on where and when negative data was observed
+
+    Notes
+    -----
+    Original Author: Chiara Monforte
     """
     utilities._check_necessary_variables(ds, [var, 'TIME', 'DEPTH'])
     # Check how much negative data there is
@@ -239,18 +268,25 @@ def plot_daynight_avg(ds,var='PSAL', ax: plt.Axes = None, sel_day=None, **kw: di
     
     Parameters
     ----------
-    ds: xarray dataset in OG1 format containing at least time, depth and the selected variable
-    var: name of the selected variable
-    ax: axis to plot the data
-    sel_day: selected day to plot. Defaults to the median day
+    ds: xarray.Dataset
+        Dataset in **OG1 format**, containing at least **TIME, DEPTH,** and the selected variable.
+    var: str, optional, default='PSAL'
+        Selected variable  
+    ax: matplotlib.axes.Axes, default = None
+        Axis to plot the data
+    sel_day : str or None, optional, default = `None`  
+        The specific day to plot. If `None`, the function selects the **median day** in the dataset.
     
     Returns
     -------
-    A line plot comparing the day and night average over depth for the selected day
+    fig : matplotlib.figure.Figure  
+        The generated **figure** containing the plot.  
+    ax : matplotlib.axes.Axes  
+        The **axes** object with the plotted data.
 
-    Original author
-    ----------------
-    Chiara Monforte
+    Notes
+    -----
+    Original Author: Chiara Monforte
 
     """
     day, night = tools.compute_daynight_avg(ds, sel_var=var)
@@ -283,29 +319,41 @@ def plot_daynight_avg(ds,var='PSAL', ax: plt.Axes = None, sel_day=None, **kw: di
 def plot_quench_assess(ds: xr.Dataset, sel_var: str, ax: plt.Axes = None, start_time=None,
                            end_time=None,start_prof=None, end_prof=None, ylim=35, **kw: dict, ) -> tuple({plt.Figure, plt.Axes}):
     """
-    This function can be used to plot sections for any variable with the sunrise and sunset plotted over
-    
+    Generates a **section plot** of the selected variable over time and depth,  
+    with **sunrise and sunset** times marked to assess potential Non-Photochemical Quenching (NPQ) effects.  
+
     Parameters
     ----------
-    ds: xarray on OG1 format containing at least time, depth, latitude, longitude and the selected variable. 
-        Data should not be gridded.
-    sel_var: selected variable to plot
-    ax: axis to plot the data
-    start_time: Start date of the data selection format 'YYYY-MM-DD'. As missions can be long and came make it hard to visualise NPQ effect. 
-                Defaults to mid 4 days
-    end_time: End date of the data selection format 'YYYY-MM-DD'. As missions can be long and came make it hard to visualise NPQ effect. 
-                Defaults to mid 4 days
-    start_prof: Start profile of the data selection. If no profile is specified, the specified time selection will be used or the mid 4 days of the deployment
-    end_prof:  End profile of the data selection. If no profile is specified, the specified time selection will be used or the mid 4 days of the deployment
-    ylim: specified limit for the maximum y-axis value. The minimum is computed as ylim/30
+    ds : xarray.Dataset  
+        Dataset in **OG1 format**, containing at least **TIME, DEPTH, LATITUDE, LONGITUDE**, and the selected variable.
+        Data **should not** be gridded.  
+    sel_var : str  
+        The selected variable to plot.  
+    ax : matplotlib.axes.Axes, optional, default = `None`  
+        Axis on which to plot the data. If `None`, a new figure and axis will be created.  
+    start_time : str or None, optional, default = `None`  
+        Start date for the data selection (`'YYYY-MM-DD'`).  
+        - If `None`, defaults to **2 days before** the dataset’s median date.  
+    end_time : str or None, optional, default = `None`  
+        End date** for the data selection (`'YYYY-MM-DD'`).  
+        - If `None`, defaults to **2 days after** the dataset’s median date.  
+    start_prof : int or None, optional, default = `None`  
+        Start profile number for data selection
+    end_prof : int or None, optional, default = `None`  
+        End profile number for data selection 
+    ylim : float, optional, default = `35`  
+        Maximum depth limit for the y-axis. The **minimum limit** is automatically set as `ylim / 30`.  
     
     Returns
     -------
-    A section showing the variability of the selected data over time and depth
+    fig : matplotlib.figure.Figure  
+        The generated **figure** containing the plot.  
+    ax : matplotlib.axes.Axes  
+        The **axes** object with the plotted data.
 
-    Original author
-    ----------------
-    Chiara Monforte
+    Notes
+    -----
+    Original Author: Chiara Monforte
     """
     utilities._check_necessary_variables(ds, ['TIME', sel_var, 'DEPTH'])
     with plt.style.context(glidertest_style_file):
@@ -359,23 +407,32 @@ def plot_quench_assess(ds: xr.Dataset, sel_var: str, ax: plt.Axes = None, start_
 
 def check_temporal_drift(ds: xr.Dataset, var: str, ax: plt.Axes = None, **kw: dict, ) -> tuple({plt.Figure, plt.Axes}):
     """
-    This function can be used to plot sections for any variable with the sunrise and sunset plotted over
+    Assesses potential **temporal drift** in a selected variable by generating a figure with two subplots:  
+    1. **Time series scatter plot** of the variable.  
+    2. **Depth profile scatter plot**, colored by date.
     
     Parameters
     ----------
-    ds: xarray on OG1 format containing at least time, depth, latitude, longitude and the selected variable. 
-        Data should not be gridded.
-    var: selected variable to plot
-    ax: axis to plot the data
+    ds : xarray.Dataset  
+        Dataset in **OG1 format**, containing at least **TIME, DEPTH,** and the selected variable.  
+        Data **should not be gridded**.  
+    var : str, optional  
+        Selected variable to analyze.
+    ax : matplotlib.axes.Axes, optional  
+        Axis to plot the data. If None, a new figure and axis will be created.  
+    **kw : dict  
+        Additional keyword arguments for customization.
     
     Returns
     -------
-    A figure with two subplots. One is a section containing the data over time and depth. The other one is a scatter of data from the variable
-    over depth and colored by date
+    fig : matplotlib.figure.Figure  
+        The generated figure.  
+    ax : matplotlib.axes.Axes  
+        Axes containing the plots. 
 
-    Original author
-    ----------------
-    Chiara Monforte
+    Notes
+    -----
+    Original Author: Chiara Monforte
     """
     utilities._check_necessary_variables(ds, ['TIME', var, 'DEPTH'])
     with plt.style.context(glidertest_style_file):
@@ -406,23 +463,31 @@ def check_temporal_drift(ds: xr.Dataset, var: str, ax: plt.Axes = None, **kw: di
 def plot_prof_monotony(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict, ) -> tuple({plt.Figure, plt.Axes}):
 
     """
-    This function can be used to plot the profile number and check for any possible issues with the profile index assigned.
+    Checks for potential issues with the assigned **profile index** by plotting its progression over time.  
 
     Parameters
     ----------
-    ds: xarray dataset in OG1 format with at least PROFILE_NUMBER, TIME, DEPTH. Data should not be gridded
-    ax: axis to plot the data
+    ds : xarray.Dataset  
+        Dataset in **OG1 format**, containing at least **TIME, DEPTH,** and **PROFILE_NUMBER**.  
+        Data **should not be gridded**.  
+    ax : matplotlib.axes.Axes, optional  
+        Axis to plot the data. If None, a new figure and axis will be created.  
+    **kw : dict  
+        Additional keyword arguments for customization. 
 
     Returns 
     -------
-    Two plots, one line plot with the profile number over time (expected to be always increasing). A
-    second plot which is a scatter plot showing at which depth over time there was a profile index where the
-    difference was neither 0 nor 1 (meaning there are possibly issues with how the profile index was assigned).
+    fig : matplotlib.figure.Figure  
+        The generated figure.  
+    ax : matplotlib.axes.Axes  
+        Axes containing the two plots.
+        - 1. One line plot with the profile number over time (expected to be always increasing).
+        - 2. Scatter plot showing at which depth over time there was a profile index where the
+        difference was neither 0 nor 1 (meaning there are possibly issues with how the profile index was assigned).
 
-    Original author
-    ----------------
-    Chiara Monforte
-
+    Notes
+    -----
+    Original Author: Chiara Monforte
     """
     utilities._check_necessary_variables(ds, ['TIME', 'PROFILE_NUMBER', 'DEPTH'])
     with plt.style.context(glidertest_style_file):
@@ -453,23 +518,27 @@ def plot_prof_monotony(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict, ) -> tup
 
 def plot_glider_track(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict) -> tuple({plt.Figure, plt.Axes}):
     """
-    This function plots the glider track on a map, with latitude and longitude colored by time.
+    Plots the **glider track** on a map, with latitude and longitude colored by time.  
 
     Parameters
     ----------
-    ds: xarray in OG1 format with at least TIME, LATITUDE, and LONGITUDE.
-    ax: Optional; axis to plot the data.
-    kw: Optional; additional keyword arguments for the scatter plot.
+    ds : xarray.Dataset  
+        Dataset in **OG1 format**, containing at least **TIME, LATITUDE,** and **LONGITUDE**.  
+    ax : matplotlib.axes.Axes, optional  
+        Axis to plot the data. If None, a new figure and axis will be created.  
+    **kw : dict  
+        Additional keyword arguments for the scatter plot.  
 
     Returns
     -------
-    One plot with the map of the glider track.
-    fig: matplotlib.figure.Figure
-    ax: matplotlib.axes._subplots.AxesSubplot
+    fig : matplotlib.figure.Figure  
+        The generated figure.  
+    ax : matplotlib.axes.Axes  
+        Axes containing the plot.
 
-    Original author
-    ----------------
-    Eleanor Frajka-Williams
+    Notes
+    -----
+    Original Author: Eleanor Frajka-Williams
     """
     utilities._check_necessary_variables(ds, ['TIME', 'LONGITUDE', 'LATITUDE'])
     with plt.style.context(glidertest_style_file):
@@ -515,23 +584,27 @@ def plot_glider_track(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict) -> tuple(
 
 def plot_grid_spacing(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict) -> tuple({plt.Figure, plt.Axes}):
     """
-    This function plots histograms of the grid spacing (diff(ds.DEPTH) and diff(ds.TIME)) where only the inner 99% of values are plotted.
+    Plots **histograms of the grid spacing**, showing depth and time differences while excluding the outer 1% of values.  
 
     Parameters
     ----------
-    ds: xarray in OG1 format with at least TIME and DEPTH.
-    ax: Optional; axis to plot the data.
-    kw: Optional; additional keyword arguments for the histograms.
+    ds : xarray.Dataset  
+        Dataset in **OG1 format**, containing at least **TIME** and **DEPTH**.  
+    ax : matplotlib.axes.Axes, optional  
+        Axis to plot the data. If None, a new figure and axis will be created.  
+    **kw : dict  
+        Additional keyword arguments for the histograms.  
 
     Returns
     -------
-    Two histograms showing the distribution of grid spacing for depth and time.
-    fig: matplotlib.figure.Figure
-    ax: matplotlib.axes._subplots.AxesSubplot
+    fig : matplotlib.figure.Figure  
+        The generated figure.  
+    ax : matplotlib.axes.Axes  
+        Axes containing the histograms. 
 
-    Original author
-    ----------------
-    Eleanor Frajka-Williams
+    Notes
+    -----
+    Original Author: Eleanor Frajka-Williams
     """
     utilities._check_necessary_variables(ds, ['TIME', 'DEPTH'])
     with plt.style.context(glidertest_style_file):
@@ -625,21 +698,24 @@ def plot_grid_spacing(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict) -> tuple(
 
 def plot_sampling_period_all(ds: xr.Dataset) -> tuple({plt.Figure, plt.Axes}):
     """
-    This function plots several histograms of the sampling period for several variables (TEMP/PSAL by default and DOXY/CHLA if present) after removing their nans.
+    Plots **histograms of the sampling period** for multiple variables.  
+    By default, it includes **TEMP** and **PSAL**, with **DOXY** and **CHLA** added if present in the dataset.  
 
     Parameters
     ----------
-    ds: xarray in OG1 format.
+    ds : xarray.Dataset  
+        Dataset in **OG1 format**.  
 
     Returns
     -------
-    One histogram for each variable showing the distribution of the sampling period.
-    fig: matplotlib.figure.Figure
-    ax: matplotlib.axes._subplots.AxesSubplot
+    fig : matplotlib.figure.Figure  
+        The generated figure.  
+    ax : matplotlib.axes.Axes  
+        Axes containing the histograms.
 
-    Original author
-    ----------------
-    Louis Clement
+    Notes
+    -----
+    Original Author: Louis Clement
     """
 
     count_vars=2
@@ -660,22 +736,25 @@ def plot_sampling_period_all(ds: xr.Dataset) -> tuple({plt.Figure, plt.Axes}):
 
 def plot_sampling_period(ds: xr.Dataset, ax: plt.Axes = None, variable='TEMP'):
     """
-    Similar to plot_grid_spacing, this function plots histograms but of the sampling period for one variable after removing its nans.
-    
+    Plots a **histogram of the sampling period** for a selected variable after removing NaN values.
+
     Parameters
     ----------
-    ds: xarray in OG1 format.
-    ax: Optional, axis to plot the data.
-    variable: display the sampling period for this variable 
+    ds : xarray.Dataset  
+        Dataset in **OG1 format**.  
+    ax : matplotlib.axes.Axes, optional  
+        Axis to plot the data. If not provided, a new figure and axis are created.  
+    variable : str, default='TEMP'  
+        Variable for which the sampling period is displayed.  
 
     Returns
     -------
-    One histogram showing the distribution of the sampling period.
-    ax: matplotlib.axes._subplots.AxesSubplot
+    ax : matplotlib.axes.Axes  
+        Axis containing the histogram. 
 
-    Original author
-    ----------------
-    Louis Clement
+    Notes
+    -----
+    Original Author: Louis Clement
     """
 
     if ax is None:
@@ -721,23 +800,31 @@ def plot_sampling_period(ds: xr.Dataset, ax: plt.Axes = None, variable='TEMP'):
 
 def plot_ts(ds: xr.Dataset, axs: plt.Axes = None, **kw: dict) -> tuple({plt.Figure, plt.Axes}):
     """
-    This function plots histograms of temperature and salinity values (middle 95%), and a 2D histogram of salinity and temperature with density contours.
+    Plots **temperature and salinity distributions** using histograms and a 2D density plot.
 
     Parameters
     ----------
-    ds: xarray in OG1 format with at least TEMP and PSAL.
-    ax: Optional; axis to plot the data.
-    kw: Optional; additional keyword arguments for the histograms.
+    ds : xarray.Dataset  
+        Dataset in **OG1 format**, containing at least **DEPTH, LONGITUDE, LATITUDE, TEMP and PSAL**.  
+    axs : matplotlib.axes.Axes, optional  
+        Axes to plot the data. If not provided, a new figure and axes are created.  
+    kw : dict, optional  
+        Additional keyword arguments for the histograms.  
 
     Returns
     -------
-    Three plots: histogram of temperature, histogram of salinity, and 2D histogram of salinity and temperature with density contours.
-    fig: matplotlib.figure.Figure
-    ax: matplotlib.axes._subplots.AxesSubplot
+    fig : matplotlib.figure.Figure  
+        Figure containing the plots.  
+    axs : matplotlib.axes.Axes  
+        Axes containing the histograms.  
+        - **Three plots are created:**  
+            1. **Histogram of Conservative Temperature** (middle 99%)  
+            2. **Histogram of Absolute Salinity** (middle 99%)  
+            3. **2D Histogram of Salinity vs. Temperature** with density contours 
 
-    Original author
-    ----------------
-    Eleanor Frajka-Williams
+    Notes
+    -----
+    Original Author: Eleanor Frajka-Williams
     """
     utilities._check_necessary_variables(ds, ['DEPTH', 'LONGITUDE', 'LATITUDE', 'PSAL', 'TEMP'])
     with plt.style.context(glidertest_style_file):
@@ -826,32 +913,42 @@ def plot_ts(ds: xr.Dataset, axs: plt.Axes = None, **kw: dict) -> tuple({plt.Figu
             plt.show()
         all_ax = axs
         return fig, all_ax
+    
 def plot_vertical_speeds_with_histograms(ds, start_prof=None, end_prof=None):
     """
-    Plot vertical speeds with histograms for diagnostic purposes.
-    This function generates a diagnostic plot for the calculation of vertical seawater velocity.
-    It plots the modelled and computed (from dz/dt) vertical velocities as line plots, where these
-    should be similar. The difference between these velocities is the implied seawater velocity,
-    which should be closer to zero than the vehicle velocities. The histogram provides a visual
-    representation to identify any biases. The final calculation of the median should be close to
-    zero if a large enough sample of dives is input and if the glider flight model is well-tuned.
+    Plots vertical glider speeds with histograms for diagnostic purposes.
+
+    This function generates a **diagnostic plot** for vertical velocity calculations, comparing:
+    1. **Modeled glider vertical speed** (flight model)
+    2. **Computed glider speed** (from dz/dt, pressure sensor)
+    3. **Implied seawater velocity** (difference between the two)
+
+    The histograms allow for identifying biases, and the **median of the seawater velocity** should be close to zero if:
+    - A large enough sample of dives is used.
+    - The glider flight model is well-tuned.
 
     Parameters
     ----------
-    ds (xarray.Dataset): The dataset containing the vertical speed data where
-    - VERT_GLIDER_SPEED is the modelled glider speed
-    - VERT_SPEED_DZDT is the computed glider speed from the pressure sensor
-    - VERT_SW_SPEED is the implied seawater velocity.
-    start_prof (int, optional): The starting profile number for subsetting the dataset. Defaults to first profile number.
-    end_prof (int, optional): The ending profile number for subsetting the dataset. Defaults to last profile number.
+    ds : xarray.Dataset  
+        Dataset containing vertical speed data with required variables:  
+        - **VERT_GLIDER_SPEED**: Modeled glider speed  
+        - **VERT_SPEED_DZDT**: Computed glider speed from pressure sensor  
+        - **VERT_SW_SPEED**: Implied seawater velocity  
+    start_prof : int, optional  
+        Starting profile number for subsetting. Defaults to the **first profile number**.  
+    end_prof : int, optional  
+        Ending profile number for subsetting. Defaults to the **last profile number**.  
 
     Returns
     -------
-    fig, axs (tuple): The figure and axes objects for the plot.
+    fig : matplotlib.figure.Figure  
+        The figure containing the plots.  
+    axs : tuple(matplotlib.axes.Axes)  
+        The axes objects for the plots.
 
-    Original author
-    ----------------
-    Eleanor Frajka-Williams
+    Notes
+    ------
+    Original Author: Eleanor Frajka-Williams
     """
     utilities._check_necessary_variables(ds, ['GLIDER_VERT_VELO_MODEL', 'GLIDER_VERT_VELO_DZDT', 'VERT_CURR_MODEL','PROFILE_NUMBER'])
     with plt.style.context(glidertest_style_file):
@@ -984,20 +1081,33 @@ def plot_combined_velocity_profiles(ds_out_dives: xr.Dataset, ds_out_climbs: xr.
     Replicates Fig 3 in Frajka-Williams et al. 2011, but using an updated dataset from Jim Bennett (2013), 
     now in OG1 format as sg014_20040924T182454_delayed.nc.  Note that flight model parameters may differ from those in the paper.
 
+    The function converts vertical velocities from m/s to cm/s, plots the mean vertical velocities and their ranges for both dives and climbs,
+    and customizes the plot with labels, legends, and axis settings.
+
     Parameters
     ----------
-    ds_out_dives (xarray.Dataset): Dataset containing dive profiles with variables 'zgrid', 'meanw', 'w_lower', and 'w_upper'.
-    ds_out_climbs (xarray.Dataset): Dataset containing climb profiles with variables 'zgrid', 'meanw', 'w_lower', and 'w_upper'.
+    ds_out_dives : xarray.Dataset
+        Dataset containing dive profiles with variables:
+        - 'zgrid': Depth grid (meters)
+        - 'meanw': Mean vertical velocity (m/s)
+        - 'w_lower': Lower bound of velocity range (m/s)
+        - 'w_upper': Upper bound of velocity range (m/s)
+    
+    ds_out_climbs : xarray.Dataset
+        Dataset containing climb profiles with the same variables as `ds_out_dives`.
 
-    The function converts vertical velocities from m/s to cm/s, plots the mean vertical velocities and their ranges for both dives and climbs, and customizes the plot with labels, legends, and axis settings.
+    Returns
+    -------
+    fig : matplotlib.figure.Figure
+        The figure object for the plot.
+    
+    ax : matplotlib.axes._subplots.AxesSubplot
+        The axes object for the plot.
 
-    Note
-    ----
-    Assumes that the vertical velocities are in m/s and the depth grid is in meters.
-
-    Original author
-    ----------------
-    Eleanor Frajka-Williams
+    Notes
+    -----
+    - Assumes that the vertical velocities are in m/s and the depth grid is in meters.
+    Original Author: Eleanor Frajka-Williams
     """
     conv_factor = 100  # Convert m/s to cm/s
     depth_negative = ds_out_dives.zgrid.values * -1
@@ -1050,20 +1160,28 @@ def plot_hysteresis(ds, var='DOXY', v_res=1, perct_err=2, ax=None):
 
     Parameters
     ----------
-    ds: xarray on OG1 format containing at least depth, profile_number and the selected variable.
-        Data should not be gridded.
-    var: Selected variable
-    v_res: Vertical resolution for the gridding
-    perct_err: Percentage error threshold used to plot a vertical line in one of the subplots
-    ax: Specific axis in can the user wants to add this plot to an existing figure
+    ds : xarray.Dataset
+        Dataset in **OG1 format** containing at least **DEPTH, PROFILE_NUMBER** and the selected variable. 
+        Data should **not** be gridded.
+    var : str, optional, default = 'DOXY'
+        The variable to analyze for hysteresis effects
+    v_res : int, default = 1
+        Vertical resolution for gridding the data
+    perct_err : float, default = 2
+        Percentage error threshold for plotting a reference vertical line
+    ax : matplotlib.axes.Axes, default = None
+        Specific axes for plotting if adding to an existing figure
 
     Returns
     -------
-   df: pandas dataframe containing dive and climb average over depth for the selected variable. A third column contains the depth values
+    fig : matplotlib.figure.Figure
+        The figure object containing the plots.
+    ax : list of matplotlib.axes.Axes
+        The list of axes corresponding to the four generated subplots.
 
-    Original author
-    ----------------
-    Chiara Monforte
+    Notes
+    -----
+    Original Author: Chiara Monforte
     """
     varG, profG, depthG = utilities.construct_2dgrid(ds.PROFILE_NUMBER, ds.DEPTH, ds[var], 1, v_res)
     df, diff, err, rms = tools.compute_hyst_stat(ds, var=var, v_res=v_res)
@@ -1108,38 +1226,36 @@ def plot_hysteresis(ds, var='DOXY', v_res=1, perct_err=2, ax=None):
 
 def plot_outlier_duration(ds: xr.Dataset, rolling_mean: pd.Series, overtime, std=2, ax=None):
     """
-       Generates two plots to visualize profile durations and highlight outliers.
-       This helps identify profiles with abnormal durations by comparing the actual profile durations
-       to a rolling mean, and by visualizing the shape and depth of the selected outlier profiles.
+    Generates two plots to visualize profile durations and highlight outliers.
+    This helps identify profiles with abnormal durations by comparing the actual profile durations
+    to a rolling mean, and by visualizing the shape and depth of the selected outlier profiles.
 
-       Parameters
-       ----------
-       ds : An xarray object containing at least the variables 'TIME', 'DEPTH', and 'PROFILE_NUMBER'.
-           These are used to compute the profile durations and plot depth profiles.
-       rolling_mean : A series representing the rolling mean of the profile durations,
-                   which is used to highlight outliers based on standard deviation.
-       overtime : A list of profile numbers identified as having unusual durations.
-               These profiles are marked on the plot to highlight the outliers.
-       std : float, optional, default 2
-           The number of standard deviations above and below the rolling mean that will be used to define the range
-           of "normal" durations. Profiles outside this range are considered outliers.
-       ax :The axes object on which to plot the results. If not provided, a new figure with two subplots is created.
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        Dataset containing at least **TIME, DEPTH, and PROFILE_NUMBER**
+    rolling_mean : pandas.Series
+        A series representing the rolling mean of profile durations, used to 
+        define the range of normal durations.
+    overtime : list
+        A list of profile numbers identified as outliers based on abnormal durations.
+    std : float, default = 2
+        The number of standard deviations around the rolling mean used to classify 
+        outliers.
+    ax : matplotlib.axes.Axes, default = None
+        Axes object for plotting. If None, a new figure with two subplots is created.
 
-       Returns
-       -------
-       fig : The figure containing the generated plots.
-           1. A plot showing the profile durations with the rolling mean and the range defined by the rolling mean ± `std`
-              (standard deviation). The range is highlighted in orange.
-           2. A scatter plot of the profile depths, with outlier profiles marked in red. These outliers are determined based
-              on the duration exceeding the threshold defined by the rolling mean ± `std`.
+    Returns
+    -------
+    fig : matplotlib.figure.Figure
+        The figure containing the generated plots
+    ax : list of matplotlib.axes.Axes
+        A list of axes corresponding to the two generated subplots.
 
-       ax :  A 1x2 array of axes used for the two subplots.
-
-       Original author
-       ------
-       Chiara Monforte
-       """
-
+    Notes
+    -----
+    Original Author: Chiara Monforte
+    """
     with plt.style.context(glidertest_style_file):
         if ax is None:
             fig,ax = plt.subplots(1,2)
@@ -1180,31 +1296,34 @@ def plot_outlier_duration(ds: xr.Dataset, rolling_mean: pd.Series, overtime, std
 
 def plot_global_range(ds, var='DOXY', min_val=-5, max_val=600, ax=None):
     """
-   This function generates a histogram of the specified variable (`var`) from the dataset (`ds`) and
-    overlays vertical lines at the specified minimum (`min_val`) and maximum (`max_val`) values to
-    visually represent the global range. The function is useful for visually inspecting whether
-    values of the specified variable fall within the expected global range.
+    This function creates a histogram of the selected variable (`var`) from the dataset (`ds`), 
+    allowing for visual inspection of its distribution. It overlays vertical lines at the specified 
+    minimum (`min_val`) and maximum (`max_val`) values to indicate the global range, helping 
+    identify whether values fall within expected limits.
 
     Parameters
     ----------
-    ds : The xarray dataset containing the variable (`var`) to be plotted.
-    var : The name of the variable to plot.
-    min_val : The minimum value of the global range to highlight on the plot.
-    max_val : The maximum value of the global range to highlight on the plot.
+    ds : xarray.Dataset
+        The dataset containing the variable to be plotted.
+    var : str, default = 'DOXY'
+        The name of the variable to be plotted in the histogram.
+    min_val : float, default = -5
+        The minimum value of the global range to highlight on the plot.
+    max_val : float, default = 600
+        The maximum value of the global range to highlight on the plot.
     ax : matplotlib.axes.Axes, optional
         The axes on which to plot the histogram. If `None`, a new figure and axes are created.
-        Default is `None`.
 
     Returns
     -------
     fig : matplotlib.figure.Figure
-        The figure object containing the plot.
+        The figure object containing the histogram plot.
     ax : matplotlib.axes.Axes
         The axes object containing the histogram plot.
-
-    Original author
-    ----------------
-    Chiara Monforte
+        
+    Notes
+    -----
+    Original Author: Chiara Monforte
     """
     with plt.style.context(glidertest_style_file):
         if ax is None:
@@ -1227,39 +1346,39 @@ def plot_global_range(ds, var='DOXY', min_val=-5, max_val=600, ax=None):
 
 def plot_ioosqc(data, suspect_threshold=[25], fail_threshold=[50], title='', ax=None):
     """
-    Plots a scatter plot of the the results of IOOS qQC tests with quality control labels (GOOD, UNKNOWN, SUSPECT, FAIL, MISSING) on the y-axis,
-    and overlays threshold-based markers for suspect and fail values. This function is useful for visualizing the status of
-    data points according to the quality control thresholds.
+    This function generates a scatter plot of the results from an IOOS QC test, labeling data points 
+    with quality control categories ('GOOD', 'UNKNOWN', 'SUSPECT', 'FAIL', 'MISSING'). It also overlays 
+    threshold-based markers to visualize suspect and fail ranges, aiding in the interpretation of 
+    data quality.
 
-    Parameters:
-    -----------
-    data : The result from the IOOS_QC test.
-            A sequence of numerical values representing the data points to be plotted.
-    suspect_threshold : A list containing one or two numerical values indicating the thresholds for suspect values. If one value is provided,
-        it applies to both lower and upper bounds for suspect data points. If two values are provided, they define the
-        lower and upper bounds for suspect values.
-    fail_threshold A list containing one or two numerical values indicating the thresholds for fail values. Similar to `suspect_threshold`,
-        it can have one or two values to define the bounds for fail data points.
+    Parameters
+    ----------
+    data : array-like
+        The results from the IOOS QC test, representing numerical data points to be plotted.
+    suspect_threshold : list, optional, default = [25]
+        A list containing one or two numerical values defining the thresholds for suspect values.
+        If one value is provided, it applies to both lower and upper bounds. If two values are given,
+        they define distinct lower and upper suspect limits.
+    fail_threshold : list, optional, default = [50]
+        A list containing one or two numerical values defining the thresholds for fail values.
+        The structure follows the same logic as `suspect_threshold`.
     title : str, optional, default = ''
         The title to display at the top of the plot.
-    ax : matplotlib Axes object, optional, default = None
-        If provided, the plot will be drawn on this existing Axes object. If None, a new figure and axis will be created.
+    ax : matplotlib.axes.Axes, optional
+        The axes object on which to plot the results. If `None`, a new figure and axis are created.
 
-    Returns:
-    --------
-    fig : matplotlib figure
-        The figure object containing the plot.
-
-    ax : matplotlib Axes object
+    Returns
+    -------
+    fig : matplotlib.figure.Figure
+        The figure object containing the QC results plot.
+    ax : matplotlib.axes.Axes
         The axes object used for plotting.
 
-    Notes:
-    ------
+    Notes
+    -----
     - The plot uses two y-axes: one for labeling data points as 'GOOD', 'UNKNOWN', 'SUSPECT', 'FAIL', or 'MISSING' based
       on thresholds, and another for marking specific suspect and fail ranges.
-    Original author
-    ----------------
-    Chiara Monforte
+    Original Author: Chiara Monforte
     """
     with plt.style.context(glidertest_style_file):
         if ax is None:
@@ -1302,20 +1421,33 @@ def plot_ioosqc(data, suspect_threshold=[25], fail_threshold=[50], title='', ax=
 
 def plot_max_depth_per_profile(ds: xr.Dataset, bins= 20, ax = None, **kw: dict) -> tuple({plt.Figure, plt.Axes}):
     """
-    This function can be used to plot the maximum depth of each profile in a dataset.
-    
+    Plots the maximum depth of each profile in a dataset.
+
+    This function generates two plots: one showing the maximum depth of each profile and another 
+    histogram illustrating the distribution of maximum depths. It provides a visual representation 
+    of profile depth variations.
+        
     Parameters
     ----------
-    ds: xarray on OG1 format containing the profile number and the maximum depth. 
-    bins: int, optional (default=20)
-    
+    ds : xarray.Dataset
+        An xarray dataset in OG1 format containing profile numbers and corresponding maximum depths.
+    bins : int, optional, default = 20
+        The number of bins to use for the histogram of maximum depths.
+    ax : matplotlib.axes.Axes, optional
+        The axes object on which to plot the results. If `None`, a new figure with two subplots is created.
+    **kw : dict, optional
+        Additional keyword arguments passed to the plotting function for customization.
+
     Returns
     -------
-    One figure with two plots illustrating the max depth of each profile and a histogram of the max depths
+    fig : matplotlib.figure.Figure
+        The figure object containing the plots.
+    ax : matplotlib.axes.Axes
+        A 1x2 array of axes used for the two subplots.
 
-    Original author
-    ----------------
-    Till Moritz
+    Notes
+    -----
+    Original Author: Till Moritz
     """
     max_depths = tools.max_depth_per_profile(ds)
     with plt.style.context(glidertest_style_file):
