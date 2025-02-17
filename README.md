@@ -41,10 +41,14 @@ All contributions are welcome! See [contributing](CONTRIBUTING.md) for more deta
 To install a local, development version of glidertest, clone the repo, open a terminal in the root directory (next to this readme file) and run these commands:
 
 ```sh
+git clone https://github.com/OceanGlidersCommunity/glidertest.git
+cd glidertest
 pip install -r requirements-dev.txt
 pip install -e . 
 ```
 This installs glidertest locally. -e ensures that any edits you make in the files will be picked up by scripts that import functions from glidertest.
+
+You can run the example jupyter notebook by launching jupyterlab with `jupyter-lab` and navigating to the `notebooks` directory.
 
 All new functions should include tests, you can run the tests locally and generate a coverage report with:
 

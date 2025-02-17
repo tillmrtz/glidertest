@@ -13,6 +13,7 @@ import cartopy.feature as cfeature
 import warnings
 from glidertest import utilities, tools
 import os
+import matplotlib.ticker
 
 dir = os.path.dirname(os.path.realpath(__file__))
 glidertest_style_file = f"{dir}/glidertest.mplstyle"
@@ -78,13 +79,15 @@ def plot_updown_bias(ds: xr.Dataset, var='TEMP', v_res=1, ax: plt.Axes = None, *
             plt.show()
         return fig, ax
 
-def plot_basic_vars(ds: xr.Dataset, v_res=1, start_prof=0, end_prof=-1):
+
+def plot_basic_vars(ds: xr.Dataset, v_res=1, start_prof=0, end_prof=-1, ax=None):
     """
     This function plots the basic oceanographic variables temperature, salinity and density. A second plot is created and filled with oxygen and 
     chlorophyll data if available.
-    
+
     Parameters
     ----------
+
     ds: xarray 
         Dataset in **OG1 format**, containing at least **PROFILE_NUMBER, DEPTH, TEMP, PSAL, LATITUDE, LONGITUDE,** and the selected variable.
     v_res: float, default = 1
@@ -117,7 +120,6 @@ def plot_basic_vars(ds: xr.Dataset, v_res=1, start_prof=0, end_prof=-1):
     salG, profG, depthG = utilities.construct_2dgrid(ds.PROFILE_NUMBER, ds.DEPTH, ds.PSAL, p, z)
     denG, profG, depthG = utilities.construct_2dgrid(ds.PROFILE_NUMBER, ds.DEPTH, ds.DENSITY, p, z)
 
-
     tempG = tempG[start_prof:end_prof, :]
     salG = salG[start_prof:end_prof, :]
     denG = denG[start_prof:end_prof, :]
@@ -126,61 +128,89 @@ def plot_basic_vars(ds: xr.Dataset, v_res=1, start_prof=0, end_prof=-1):
     with plt.style.context(glidertest_style_file):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=RuntimeWarning)
-            fig, ax = plt.subplots(1, 2)
+            if ax is None:
+                fig, ax = plt.subplots(1, 2)
+                force_plot = True
+            else:
+                fig = plt.gcf()
+                force_plot = False
+
             # Resize to half-width
             half_width = fig.get_size_inches()[0] / 2.07
             fig.set_size_inches(half_width, half_width * 0.85)
             ax1 = ax[0].twiny()
             ax2 = ax[0].twiny()
+            ax2_1 = ax[1].twiny()
             ax2.spines["top"].set_position(("axes", 1.2))
+            nticks = 5
+            for a in [ax[0], ax1, ax2, ax[1], ax2_1]:
+                a.xaxis.set_major_locator(matplotlib.ticker.LinearLocator(nticks))
+                a.xaxis.set_major_formatter(plt.FormatStrFormatter('%.1f'))
+                for tick in a.xaxis.get_majorticklabels():
+                    tick.set_horizontalalignment("center")
+                plt.setp(a.get_xticklabels()[0], visible=False)
+                plt.setp(a.get_xticklabels()[-1], visible=False)
             ax[0].plot(np.nanmean(tempG, axis=0), depthG[0, :], c='blue')
             ax1.plot(np.nanmean(salG, axis=0), depthG[0, :], c='red')
-            ax2.plot(np.nanmean(denG, axis=0), depthG[0, :], c='black')
+            ax2.plot(np.nanmean(denG, axis=0) - 1000, depthG[0, :], c='black')
 
-            ax[0].set(ylabel='Depth (m)', xlabel=f'{utilities.plotting_labels("TEMP")} \n({utilities.plotting_units(ds,"TEMP")})')
+            ax[0].set(ylabel='Depth (m)',
+                      xlabel=f'{utilities.plotting_labels("TEMP")} \n({utilities.plotting_units(ds, "TEMP")})')
             ax[0].tick_params(axis='x', colors='blue')
             ax[0].xaxis.label.set_color('blue')
             ax1.spines['bottom'].set_color('blue')
-            ax1.set(xlabel=f'{utilities.plotting_labels("PSAL")} ({utilities.plotting_units(ds,"PSAL")})')
+            new_font = ax[0].get_xticklabels()[0].get_fontsize()
+            ax1.spines['bottom'].set_color('blue')
+            ax1.set_xlabel(f'{utilities.plotting_labels("PSAL")} ({utilities.plotting_units(ds, "PSAL")})',
+                           fontsize=int(new_font))
             ax1.xaxis.label.set_color('red')
             ax1.spines['top'].set_color('red')
-            ax1.tick_params(axis='x', colors='red')
-            ax2.spines['bottom'].set_color('black')
-            ax2.set(xlabel=f'{utilities.plotting_labels("DENSITY")} ({utilities.plotting_units(ds,"DENSITY")})')
+            ax1.tick_params(axis='x', colors='red', labelsize=int(new_font))
+            ax2.set_xlabel(xlabel=f'{utilities.plotting_labels("SIGMA")} ({utilities.plotting_units(ds, "SIGMA")})',
+                           fontsize=int(new_font))
             ax2.xaxis.label.set_color('black')
             ax2.spines['top'].set_color('black')
-            ax2.tick_params(axis='x', colors='black')
+            ax2.tick_params(axis='x', colors='black', labelsize=int(new_font))
 
             # Add text annotation to the right, outside of the plot
-            ax2.text(1.2, 1.25, f'Averaged profiles {start_prof}-{end_prof}', transform=ax2.transAxes, 
-                     verticalalignment='center', horizontalalignment='left', rotation=0, fontsize=12, bbox=dict(facecolor='white', alpha=0.5))
+            ax2.text(1.68, 1.25, f'Averaged profiles \n {start_prof}-{end_prof}', transform=ax2.transAxes,
+                     verticalalignment='center', horizontalalignment='center', rotation=0, fontsize=int(new_font),
+                     bbox=dict(facecolor='white', alpha=0.5))
 
             if 'CHLA' in ds.variables:
                 chlaG, profG, depthG = utilities.construct_2dgrid(ds.PROFILE_NUMBER, ds.DEPTH, ds.CHLA, p, z)
                 chlaG = chlaG[start_prof:end_prof, :]
-                ax2_1 = ax[1].twiny()
                 ax2_1.plot(np.nanmean(chlaG, axis=0), depthG[0, :], c='green')
-                ax2_1.set(xlabel=f'{utilities.plotting_labels("CHLA")} ({utilities.plotting_units(ds,"CHLA")})')
+                ax2_1.set_xlabel(xlabel=f'{utilities.plotting_labels("CHLA")} ({utilities.plotting_units(ds, "CHLA")})',
+                                 fontsize=int(new_font))
                 ax2_1.xaxis.label.set_color('green')
                 ax2_1.spines['top'].set_color('green')
-                ax2_1.tick_params(axis='x', colors='green')
+                ax2_1.tick_params(axis='x', colors='green', labelsize=int(new_font))
+                plt.setp(ax2_1.get_yticklabels()[0], visible=False)
+                plt.setp(ax2_1.get_yticklabels()[-1], visible=False)
             else:
-                ax[1].text(0.3, 0.7, 'Chlorophyll data unavailable', va='top', transform=ax[1].transAxes)
+                plt.setp(ax2_1.get_xticklabels(), visible=False)
+                ax[1].text(0.15, 0.6, 'Chlorophyll data \nunavailable', va='top', transform=ax[1].transAxes,
+                           fontsize=int(new_font))
 
             if 'DOXY' in ds.variables:
                 oxyG, profG, depthG = utilities.construct_2dgrid(ds.PROFILE_NUMBER, ds.DEPTH, ds.DOXY, p, z)
                 oxyG = oxyG[start_prof:end_prof, :]
                 ax[1].plot(np.nanmean(oxyG, axis=0), depthG[0, :], c='orange')
-                ax[1].set(xlabel=f'{utilities.plotting_labels("DOXY")} \n({utilities.plotting_units(ds,"DOXY")})')
+                ax[1].set(xlabel=f'{utilities.plotting_labels("DOXY")} \n({utilities.plotting_units(ds, "DOXY")})')
                 ax[1].xaxis.label.set_color('orange')
                 ax[1].spines['top'].set_color('orange')
                 ax[1].tick_params(axis='x', colors='orange')
                 ax[1].spines['bottom'].set_color('orange')
             else:
-                ax[1].text(0.3, 0.5, 'Oxygen data unavailable', va='top', transform=ax[1].transAxes)
+                plt.setp(ax[1].get_xticklabels(), visible=False)
+                ax[1].text(0.2, 0.4, 'Oxygen data \nunavailable', va='top', transform=ax[1].transAxes,
+                           fontsize=int(new_font))
+
             [a.set_ylim(depthG.max(), 0) for a in ax]
             [a.grid() for a in ax]
-            plt.show()
+            if force_plot:
+                plt.show()
     return fig, ax
 
 
@@ -550,6 +580,12 @@ def plot_glider_track(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict) -> tuple(
         latitudes = ds.LATITUDE.values
         longitudes = ds.LONGITUDE.values
         times = ds.TIME.values
+
+        # Drop NaN values
+        valid_indices = ~np.isnan(latitudes) & ~np.isnan(longitudes) & ~np.isnan(times)
+        latitudes = latitudes[valid_indices]
+        longitudes = longitudes[valid_indices]
+        times = times[valid_indices]
 
         # Reduce the number of latitudes, longitudes, and times to no more than 2000
         if len(latitudes) > 2000:
@@ -1458,7 +1494,7 @@ def plot_max_depth_per_profile(ds: xr.Dataset, bins= 20, ax = None, **kw: dict) 
             fig = plt.gcf()
             force_plot = False
             
-        ax[0].plot(max_depths.profile_num, max_depths,**kw)
+        ax[0].plot(max_depths.PROFILE_NUMBER, max_depths,**kw)
         ax[0].set_xlabel('Profile number')
         ax[0].set_ylabel(f'Max depth ({max_depths.units})')
         ax[0].set_title('Max depth per profile')
