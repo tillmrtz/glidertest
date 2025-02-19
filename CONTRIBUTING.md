@@ -88,5 +88,12 @@ Code is organised into files within `glidertest/*.py` and demonstrated in jupyte
 
 Our [documentation](https://oceangliderscommunity.github.io/glidertest/) is built from the function docstrings and the [example notebook](https://oceangliderscommunity.github.io/glidertest/demo-output.html). If you think the documentation could be better, do not hesitate to suggest an improvement! Either in an Issue or a PR.
 
+To build the documentation locally you need to install a few extra requirements:
+
+1. Install `make` for your computer, e.g. on ubuntu with `sudo apt install make`
+2. Install the additional python requirements. Activate the environment you use for working with glidertest, navigate to the top directory of this repo, then run `pip install -r requirements-dev.txt`
+
+Once you have the extras installed, you can build the docs locally by navigating to the **docs** directory and running `make clean html`. This command will create a directory called **build** which contains the html files of the documentation. Open the file **docs/builld/html/index.html** in your browser, and you will see the docs with your changes applied. After making more changes, just run `make clean html` again to rebuild the docs. 
+
 ## Attribution
 This guide is based on the **contributing-gen**. [Make your own](https://github.com/bttger/contributing-gen)!
