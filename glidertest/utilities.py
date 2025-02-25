@@ -5,7 +5,6 @@ from pandas import DataFrame
 from skyfield import almanac
 from skyfield import api
 import gsw
-import warnings
 from matplotlib.dates import DateFormatter
 import matplotlib.dates as mdates
 
