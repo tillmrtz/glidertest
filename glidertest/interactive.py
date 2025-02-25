@@ -203,8 +203,8 @@ def interactive_daynight_avg(ds):
     var_dropdown = widgets.Dropdown(options=var_options, value=var_options[0], description="Variable:")
     day_options = np.unique(ds.TIME.values.astype('datetime64[D]'))
     day_options = [str(i) for i in day_options]
-    day_slider = widgets.SelectionSlider(options=day_options, value=day_options[0], description="Day:")
-    #day_slider = widgets.Dropdown(options=day_options, value=day_options[0], description="Day:")
+    #day_slider = widgets.SelectionSlider(options=day_options, value=day_options[0], description="Day:")
+    day_slider = widgets.Dropdown(options=day_options, value=day_options[0], description="Day:")
 
     # Arrange all widgets in a vertical layout
     ui = widgets.VBox([widgets.Label("Choose a variable to plot:"), var_dropdown, day_slider])
@@ -247,8 +247,6 @@ def interactive_ts_plot(ds):
     ui = widgets.VBox([percentile_slider])
 
     # Create interactive plot
-    out = widgets.interactive_output(plot_ts_plot, {
-        'percentile': percentile_slider
-    })
+    out = widgets.interactive_output(plot_ts_plot, {'percentile': percentile_slider})
 
     display(ui, out)
