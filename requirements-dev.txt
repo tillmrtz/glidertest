@@ -20,3 +20,5 @@ gsw
 tqdm
 ioos_qc
 folium
+Ipython
+ipywidgets

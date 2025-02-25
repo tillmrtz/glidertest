@@ -1564,7 +1564,8 @@ def plot_profile_binned(ds: xr.Dataset, profile_num: int, vars: list = ['TEMP','
         for i, var in enumerate(vars):
             ax = axs[i]
             ### add the long_name to the label, if it exists
-            ax.plot(var_data[var], var_data['DEPTH'], color=colors[i], label=f'{var} - {getattr(profile[var], 'long_name', '')}', ls='-')
+            long_name = getattr(profile[var], 'long_name', '')
+            ax.plot(var_data[var], var_data['DEPTH'], color=colors[i], label=f'{var} - {long_name}', ls='-')
             ax.scatter(var_data[var], var_data['DEPTH'], color=colors[i], marker='o',s=s)
             ax.set_xlabel(f'{var} [{getattr(profile[var], 'units', '')}]', color=colors[i])
             ax.tick_params(axis='x', colors=colors[i], bottom=True, top=False, labelbottom=True, labeltop=False)
