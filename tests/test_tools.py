@@ -62,3 +62,9 @@ def test_sop():
 def test_maxdepth():
     ds = fetchers.load_sample_dataset()
     tools.max_depth_per_profile(ds)
+
+def test_bin_data():
+    ds = fetchers.load_sample_dataset()
+    profile_num = ds.PROFILE_NUMBER.values[0]
+    ds_profile = ds.isel(N_MEASUREMENTS = ds.PROFILE_NUMBER == profile_num)
+    tools.bin_data(ds_profile, vars = ['DOXY'], resolution = 10)
