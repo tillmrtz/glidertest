@@ -62,3 +62,15 @@ def test_sop():
 def test_maxdepth():
     ds = fetchers.load_sample_dataset()
     tools.max_depth_per_profile(ds)
+
+def test_mld():
+    ds = fetchers.load_sample_dataset()
+    mld = tools.compute_mld_glidertools(ds, 'TEMP')
+    assert len(np.unique(ds.PROFILE_NUMBER)) == len(mld)
+    # Test if len(df) == 0
+    ds['CHLA'] = np.nan
+    mld = tools.compute_mld_glidertools(ds, 'CHLA', thresh=0.01, ref_depth=10, verbose=True)
+    assert np.isnan(np.unique(mld))
+    # Test elif np.nanmin(np.abs(df.DEPTH.values - ref_depth)) > 5
+    mld = tools.compute_mld_glidertools(ds, 'TEMP', thresh=0.01, ref_depth=500, verbose=True)
+    assert np.isnan(np.unique(mld))
