@@ -5,7 +5,6 @@ from pandas import DataFrame
 from skyfield import almanac
 from skyfield import api
 import gsw
-import warnings
 from matplotlib.dates import DateFormatter
 import matplotlib.dates as mdates
 
@@ -386,3 +385,36 @@ def plotting_units(ds: xr.Dataset,var: str):
         return f'{ds[var].units}'
     else:
         return ""
+def group_by_profiles(ds, variables=None):
+    """
+    Group glider dataset by the dive profile number.
+
+    This function groups the dataset by the `PROFILE_NUMBER` column, where each group corresponds to a single profile.
+    The resulting groups can be evaluated statistically, for example using methods like `pandas.DataFrame.mean` or
+    other aggregation functions. To filter a specific profile, use `xarray.Dataset.where` instead.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        A 1-dimensional glider dataset containing profile information.
+    variables : list of str, optional
+        A list of variable names to group by, if only a subset of the dataset should be included in the grouping.
+        Grouping by a subset is more memory-efficient and faster.
+
+    Returns
+    -------
+    profiles : pandas.core.groupby.DataFrameGroupBy
+        A pandas `GroupBy` object, grouped by the `PROFILE_NUMBER` of the glider dataset.
+        This can be further aggregated using methods like `mean` or `sum`.
+
+    Notes
+    -----
+    This function is based on the original GliderTools implementation and was modified by
+    Chiara Monforte to ensure compliance with the OG1 standards.
+    [Source Code](https://github.com/GliderToolsCommunity/GliderTools/blob/master/glidertools/utils.py)
+    """
+    ds = ds.reset_coords().to_pandas().reset_index().set_index("PROFILE_NUMBER")
+    if variables:
+        return ds[variables].groupby("PROFILE_NUMBER")
+    else:
+        return ds.groupby("PROFILE_NUMBER")

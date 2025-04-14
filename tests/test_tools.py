@@ -51,9 +51,9 @@ def test_vert_vel():
 def test_hyst():
     ds = fetchers.load_sample_dataset()
     df_h = tools.quant_hysteresis(ds, var = 'DOXY', v_res = 1)
-    df, diff, err, rms = tools.compute_hyst_stat(ds, var='DOXY', v_res=1)
+    df, diff, err_mean, err_range, rms = tools.compute_hyst_stat(ds, var='DOXY', v_res=1)
     assert np.array_equal(df_h.dropna(), df.dropna())
-    assert len(diff) == len(err)
+    assert len(diff) == len(err_mean)
 
 def test_sop():
     ds = fetchers.load_sample_dataset()
@@ -68,3 +68,16 @@ def test_bin_data():
     profile_num = ds.PROFILE_NUMBER.values[0]
     ds_profile = ds.isel(N_MEASUREMENTS = ds.PROFILE_NUMBER == profile_num)
     tools.bin_data(ds_profile, vars = ['DOXY'], resolution = 10)
+
+    
+def test_mld():
+    ds = fetchers.load_sample_dataset()
+    mld = tools.compute_mld_glidertools(ds, 'TEMP')
+    assert len(np.unique(ds.PROFILE_NUMBER)) == len(mld)
+    # Test if len(df) == 0
+    ds['CHLA'] = np.nan
+    mld = tools.compute_mld_glidertools(ds, 'CHLA', thresh=0.01, ref_depth=10, verbose=True)
+    assert np.isnan(np.unique(mld))
+    # Test elif np.nanmin(np.abs(df.DEPTH.values - ref_depth)) > 5
+    mld = tools.compute_mld_glidertools(ds, 'TEMP', thresh=0.01, ref_depth=500, verbose=True)
+    assert np.isnan(np.unique(mld))
