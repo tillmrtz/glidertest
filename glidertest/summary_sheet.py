@@ -45,9 +45,9 @@ def qc_checks(ds, var='TEMP'):
     spike = qartod.spike_test(ds[var], suspect_threshold=configs[var]['spike_test']['suspect_threshold'],
                               fail_threshold=configs[var]['spike_test']['fail_threshold'], method="average")
     flat = qartod.flat_line_test(ds[var], ds.TIME, 1, 3, 0.001)
-    __, __,__,err_range, __ = tools.compute_hyst_stat(ds, var=var, v_res=1)
+    __, __,err_mean,err_range, __ = tools.compute_hyst_stat(ds, var=var, v_res=1)
 
-    return gr, spike, flat, err_range
+    return gr, spike, flat, err_mean,err_range
 
 
 def fill_tableqc(df,ds, var='TEMP'):
@@ -62,15 +62,17 @@ def fill_tableqc(df,ds, var='TEMP'):
     if var not in ds.variables:
         df.loc[:, variable] = 'No data'
     else:
-        gr, spike, flat, err = qc_checks(ds, var=var)
+        gr, spike, flat, err_mean,err_range = qc_checks(ds, var=var)
         if len(gr) > 0:
             df.loc[0, variable] = 'X'
         if len(np.where((spike == 3) | (spike == 4))[0]) > 0:
             df.loc[1, variable] = 'X'
         if len(np.where((flat == 3) | (flat == 4))[0]) > 0:
             df.loc[2, variable] = 'X'
-        if len(np.where(err > 5)[0]) > 5:
+        if len(np.where(err_mean > 5)[0]) > 5:
             df.loc[3, variable] = 'X'
+        if len(np.where(err_range > 5)[0]) > 5:
+            df.loc[4, variable] = 'X'
     return df
 
 
@@ -157,7 +159,7 @@ def summary_plot(ds, save_dir='.', test=True):
         df.loc[6, 'Data exist'] = "✓"
     if 'DOXY' in ds.variables:
         df.loc[2, 'Data exist'] = "✓"
-    tab_ax = fig.add_axes([0.16, 0.54, 0.15, 0.25], anchor='NE')
+    tab_ax = fig.add_axes([0.16, 0.58, 0.15, 0.25], anchor='NE')
     fig.patch.set_visible(False)
     tab_ax.axis('off')
     tab_ax.axis('tight')
@@ -172,35 +174,34 @@ def summary_plot(ds, save_dir='.', test=True):
             cell.set_text_props(fontproperties=FontProperties(weight='bold'))
 
     # Basic checks
-    ax.text(-0.05, 0.20, 'Basic checks', transform=ax.transAxes, fontsize=font_size, weight='bold')
+    ax.text(-0.05, 0.22, 'Basic checks', transform=ax.transAxes, fontsize=font_size, weight='bold')
     basictext = '\n'.join((
         f"Issues with profile number: {phrase_numberprof_check(ds)} ",
         f"Issues with profile duration: {phrase_duration_check(ds)}",))
-    ax.text(-0.05, 0.19, basictext, transform=ax.transAxes, fontsize=font_size,
+    ax.text(-0.05, 0.21, basictext, transform=ax.transAxes, fontsize=font_size,
             verticalalignment='top')
     ## Basic checks table
-    df2 = pd.DataFrame({'': ['Global range', 'Spike test', 'Flat test', 'Hysteresis', 'Drift'],
-                        'Temperature': ['✓', '✓', '✓', '✓', '✓'],
-                        'Salinity': ['✓', '✓', '✓', '✓', '✓'],
-                        'Oxygen': ['✓', '✓', '✓', '✓', '✓'],
-                        'Chlorophyll': ['✓', '✓', '✓', '✓', '✓']})
-
+    df2 = pd.DataFrame({'':['Global range', 'Spike test', 'Flat test', 'Hysteresis (mean)', 'Hysteresis (range)', 'Drift'],
+                    'Temperature':['✓', '✓', '✓', '✓', '✓', '✓'], 
+                    'Salinity':['✓', '✓', '✓', '✓', '✓', '✓'], 
+                    'Oxygen':['✓', '✓', '✓', '✓', '✓', '✓'], 
+                    'Chlorophyll':['✓', '✓', '✓', '✓', '✓', '✓']})
     tableT = fill_tableqc(df2,ds, var='TEMP')
     tableS = fill_tableqc(tableT,ds, var='PSAL')
     tableO = fill_tableqc(tableS,ds, var='DOXY')
     tableC = fill_tableqc(tableO,ds, var='CHLA')
 
-    tableCcopy = tableC.copy()
-    colrs = np.copy(tableCcopy)
+    colrs = np.copy(tableC)
     colrs[np.where(colrs != 'X')] = 'w'
     colrs[np.where(colrs == 'X')] = 'lightcoral'
 
-    tab2_ax = fig.add_axes([0.33, 0.22, 0.25, 0.4], anchor='NE')
+    tab2_ax = fig.add_axes([0.34, 0.24, 0.27, 0.55], anchor='NE')
     fig.patch.set_visible(False)
     tab2_ax.axis('off')
     tab2_ax.axis('tight')
     table2 = tab2_ax.table(cellText=df2.values, colLabels=df2.columns, cellColours=colrs, cellLoc='center')
     table2.scale(3, 2)
+
 
     for (row, col), cell in table2.get_celld().items():
         if (row == 0) or (col == -1):
@@ -208,17 +209,7 @@ def summary_plot(ds, save_dir='.', test=True):
         if col == 0:
             cell.set_text_props(fontproperties=FontProperties(weight='bold'))
 
-    ## Add logo at the bottom
-    dir = os.path.dirname(os.path.realpath(__file__))
-    logo = f"{dir}/img/logos.png"
-    im = plt.imread(logo)
-    newax = fig.add_axes([0.88, -0.03, 0.1, 0.1], anchor='NE')
-    newax.imshow(im)
-    newax.axis('off')
-    ax.text(0.78, -0.11, f'Created with glidertest v{glidertest.__version__}', transform=ax.transAxes, fontsize=font_size - 3,
-            verticalalignment='top')
-
-
+    
 
     # Add glider track plot
     gt_ax = fig.add_axes([0.47, 0.64, 0.38, 0.25], projection=ccrs.PlateCarree(), anchor='SE', zorder=-1, )
@@ -226,10 +217,16 @@ def summary_plot(ds, save_dir='.', test=True):
     # Add basic variables profiles plot
     bv1_ax = fig.add_axes([0.5, 0.31, 0.21, 0.21], anchor='SE', zorder=-1)
     bv2_ax = fig.add_axes([0.78, 0.31, 0.21, 0.21], anchor='SE', zorder=-1)
-
-    plots.plot_basic_vars(ds, v_res=1, start_prof=0, end_prof=int(ds.PROFILE_NUMBER.max()), ax=[bv1_ax, bv2_ax])
+    plots.plot_basic_vars(ds, v_res=1, start_prof=0, end_prof=-1, ax=[bv1_ax, bv2_ax])
     todays_date = datetime.today().strftime('%Y%m%d')
     if test:
+        ## Add logo at the bottom
+        im = plt.imread('img/logos.png')
+        newax = fig.add_axes([0.88, -0.03, 0.1, 0.1], anchor='NE')
+        newax.imshow(im)
+        newax.axis('off')
+        ax.text(0.78, -0.11, 'Created with Glidertest', transform=ax.transAxes, fontsize=font_size - 3,
+            verticalalignment='top')
         fig.savefig(f'{save_dir}/{gserial}_{mission}_report{todays_date}.pdf')
     return fig, ax
 
