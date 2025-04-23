@@ -1612,13 +1612,9 @@ def plot_profile(ds: xr.Dataset, profile_num: int, vars: list = ['TEMP','PSAL','
     with plt.style.context(glidertest_style_file):  
         fig, ax1 = plt.subplots(figsize=(12, 9)) 
 
-        # Select the specific profile
         profile = ds.where(ds.PROFILE_NUMBER == profile_num, drop=True)
         if use_bins:
-            var_data = tools.bin_data(profile, vars, binning)
-        else:
-            var_data = {name: profile[name].values for name in vars}
-            var_data['DEPTH'] = profile.DEPTH.values
+            profile = utilities.bin_profile(profile, vars, binning)
 
         # Plot binned data
         mission = ds.id.split('_')[1][0:8]
@@ -1632,8 +1628,8 @@ def plot_profile(ds: xr.Dataset, profile_num: int, vars: list = ['TEMP','PSAL','
             ax = axs[i]
             ### add the long_name to the label, if it exists
             long_name = getattr(profile[var], 'long_name', '')
-            ax.plot(var_data[var], var_data['DEPTH'], color=colors[i], label=f'{var} - {long_name}', ls='-')
-            ax.scatter(var_data[var], var_data['DEPTH'], color=colors[i], marker='o',s=s)
+            ax.plot(profile[var], profile['DEPTH'], color=colors[i], label=f'{var} - {long_name}', ls='-')
+            ax.scatter(profile[var], profile['DEPTH'], color=colors[i], marker='o',s=s)
             unit = getattr(profile[var], 'units', '')
             ax.set_xlabel(f'{var} [{unit}]', color=colors[i])
             ax.tick_params(axis='x', colors=colors[i], bottom=True, top=False, labelbottom=True, labeltop=False)
