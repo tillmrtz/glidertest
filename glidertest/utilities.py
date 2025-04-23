@@ -49,24 +49,24 @@ def _calc_teos10_variables(ds):
     return ds
 
 def _time_axis_formatter(ax, ds, format_x_axis=True):
-    start_time = ds.TIME.min().values
-    end_time = ds.TIME.max().values
-    if (end_time - start_time) < np.timedelta64(1, 'D'):
-        formatter = DateFormatter('%H:%M')
-        locator = mdates.HourLocator(interval=2)
-        start_date = pd.to_datetime(start_time).strftime('%Y-%b-%d')
-        end_date = pd.to_datetime(end_time).strftime('%Y-%b-%d')
-        xlabel = f'Time [UTC] ({start_date})' if start_date == end_date else f'Time [UTC] ({start_date} to {end_date})'
-    elif (end_time - start_time) < np.timedelta64(7, 'D'):
-        formatter = DateFormatter('%d-%b')
-        locator = mdates.DayLocator(interval=1)
-        start_date = pd.to_datetime(start_time).strftime('%Y-%b-%d')
-        end_date = pd.to_datetime(end_time).strftime('%Y-%b-%d')
-        xlabel = f'Time [UTC] ({start_date})' if start_date == end_date else f'Time [UTC] ({start_date} to {end_date})'
-    else:
-        formatter = DateFormatter('%d-%b')
-        locator = None
-        xlabel = 'Time [UTC]'
+    """
+    Apply time formatter and locator to an axis.
+
+    Parameters
+    ----------
+    ax : matplotlib axis
+        Axis to format.
+    ds : xarray.Dataset
+        Dataset containing TIME coordinate.
+    format_x_axis : bool, default=True
+        Whether to format the x-axis (True) or y-axis (False).
+    """
+    formatter, locator, xlabel = _select_time_formatter_and_locator(ds)
+
+    axis = ax.xaxis if format_x_axis else ax.yaxis
+    axis.set_major_formatter(formatter)
+    if locator:
+        axis.set_major_locator(locator)
 
     if format_x_axis:
         ax.xaxis.set_major_formatter(formatter)
@@ -79,7 +79,57 @@ def _time_axis_formatter(ax, ds, format_x_axis=True):
             ax.yaxis.set_major_locator(locator)
         ax.set_ylabel(xlabel)
         
+
+def _select_time_formatter_and_locator(ds):
+    """
+    Select appropriate time formatter and locator based on time range.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        Dataset containing TIME coordinate.
+
+    Returns
+    -------
+    formatter : matplotlib.dates.DateFormatter
+        Formatter for time axis or colorbar.
+    locator : matplotlib.dates.Locator or None
+        Locator for axis ticks (None if not needed).
+    xlabel : str
+        Label for the axis (optional for colorbars).
+    """
+    start_time = ds.TIME.min().values
+    end_time = ds.TIME.max().values
+    time_range_hours = (end_time - start_time) / np.timedelta64(1, 'h')
+
+    if time_range_hours < 24:
+        formatter = DateFormatter('%H:%M')
+        # Dynamic interval based on time range
+        if time_range_hours <= 6:
+            interval = 1
+        elif time_range_hours <= 12:
+            interval = 2
+        else:
+            interval = 3
+        locator = mdates.HourLocator(byhour=range(0, 24, 2))
+        start_date = pd.to_datetime(start_time).strftime('%Y-%b-%d')
+        end_date = pd.to_datetime(end_time).strftime('%Y-%b-%d')
+        xlabel = f'Time [UTC] ({start_date})' if start_date == end_date else f'Time [UTC] ({start_date} to {end_date})'
+    elif time_range_hours < 24 * 7:
+        formatter = DateFormatter('%d-%b')
+        locator = mdates.DayLocator(interval=1)
+        start_date = pd.to_datetime(start_time).strftime('%Y-%b-%d')
+        end_date = pd.to_datetime(end_time).strftime('%Y-%b-%d')
+        xlabel = f'Time [UTC] ({start_date})' if start_date == end_date else f'Time [UTC] ({start_date} to {end_date})'
+    else:
+        formatter = DateFormatter('%d-%b')
+        locator = None
+        xlabel = 'Time [UTC]'
+        
+    return formatter, locator, xlabel
+        
 def construct_2dgrid(x, y, v, xi=1, yi=1, x_bin_center: bool = True, y_bin_center: bool = True, agg: str = 'median'):
+
     """
     Constructs a 2D gridded representation of input data based on specified resolutions. The function takes in x, y, and v data,
     and generates a grid where each cell contains the aggregated value (e.g., mean, median) of v corresponding to the x and y coordinates.
