@@ -38,7 +38,10 @@ def quant_updown_bias(ds, var='PSAL', v_res=1):
     z = v_res  # Vertical resolution
 
     if var in ds.variables:
-        varG, profG, depthG = utilities.construct_2dgrid(ds.PROFILE_NUMBER, ds.DEPTH, ds[var], p, z)
+        #varG, profG, depthG = utilities.construct_2dgrid(ds.PROFILE_NUMBER, ds.DEPTH, ds[var], p, z)
+        binned = utilities.bin_profile(ds, [var], binning=z)
+        varG = binned[var].to_numpy()
+        depthG = binned['DEPTH'].to_numpy()
 
         grad = np.diff(varG, axis=0)  # Horizontal gradients
         with warnings.catch_warnings():
@@ -375,7 +378,11 @@ def quant_hysteresis(ds: xr.Dataset, var='DOXY', v_res=1):
     z = v_res  # Vertical resolution
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=RuntimeWarning)
-        varG, profG, depthG = utilities.construct_2dgrid(ds.PROFILE_NUMBER, ds.DEPTH, ds[var], p, z)
+        #varG, profG, depthG = utilities.construct_2dgrid(ds.PROFILE_NUMBER, ds.DEPTH, ds[var], p, z)
+        binned = utilities.bin_profile(ds, [var], binning=z)
+        varG = binned[var].to_numpy()
+        depthG = binned['DEPTH'].to_numpy()
+
         dive = np.nanmedian(varG[0::2, :], axis=0)  # Dive
         climb = np.nanmedian(varG[1::2, :], axis=0)  # Climb
         df = pd.DataFrame(data={'dive': dive, 'climb': climb, 'depth': depthG[0, :]})
@@ -604,112 +611,26 @@ def add_sigma_1(ds: xr.Dataset, var_sigma_1: str = "SIGMA_1") -> xr.Dataset:
 
     return ds
 
-def bin_data(ds_profile, vars: list = ['TEMP','PSAL'], resolution: float = 10, agg: str = 'mean'):
-    """
-    Bin the data in a profile dataset or DataFrame by depth using fixed depth steps. The minimum depth is between
-    0 and the binning resolution, and the maximum depth is between the maximum depth of the profile and the binning resolution.
-
-    Parameters
-    ----------
-    ds_profile : xr.Dataset or pd.DataFrame
-        The dataset or dataframe containing at least 'DEPTH' and the variables to bin.
-    vars : list
-        The variables to bin.
-    resolution : float
-        The depth resolution for binning.
-    agg : str, optional
-        The aggregation method ('mean' or 'median'). Default is 'mean'.
-
-    Returns
-    -------
-    dict
-        A dictionary containing binned data arrays for each variable, including 'DEPTH'.
-
-    Notes
-    -----
-    Original author: Till Moritz
-    """
-
-    # Remove empty strings from vars list
-    vars = [var for var in vars if var]
-
-    # Validate aggregation
-    if agg not in ['mean', 'median']:
-        raise ValueError(f"Invalid aggregation method: {agg}")
-
-    # Handle xarray.Dataset
-    if isinstance(ds_profile, xr.Dataset):
-        utilities._check_necessary_variables(ds_profile, vars + ['DEPTH'])
-
-        # Define bin edges and bin centers
-        min_depth = np.floor(ds_profile.DEPTH.min() / resolution) * resolution
-        max_depth = np.ceil(ds_profile.DEPTH.max() / resolution) * resolution
-        bins = np.arange(min_depth, max_depth + resolution, resolution)
-        bin_centers = bins[:-1] + resolution / 2  # Set depth values to bin centers
-
-        # Group variables by depth bins and apply aggregation
-        binned_data = {}
-        for name in vars:
-            grouped = ds_profile[name].groupby_bins('DEPTH', bins)
-            if agg == 'mean':
-                binned_data[name] = grouped.mean().values
-            elif agg == 'median':
-                binned_data[name] = grouped.median().values
-            else:
-                raise ValueError(f"Invalid aggregation method: {agg}")
-
-        # Assign bin centers as the new depth values
-        binned_data['DEPTH'] = bin_centers
-
-    # Handle pandas.DataFrame
-    elif isinstance(ds_profile, pd.DataFrame):
-        #df = ds_profile[ds_profile['DEPTH'] > 5].copy()
-        df = ds_profile.copy()
-
-        if df.empty:
-            return {var: np.full(1, np.nan) for var in vars + ['DEPTH']}
-
-        min_depth = np.floor(df['DEPTH'].min() / resolution) * resolution
-        max_depth = np.ceil(df['DEPTH'].max() / resolution) * resolution
-        bins = np.arange(min_depth, max_depth + resolution, resolution)
-        bin_labels = bins[:-1] + resolution / 2
-        df['DEPTH_BIN'] = pd.cut(df['DEPTH'], bins, labels=bin_labels)
-
-        binned_data = {'DEPTH': bin_labels}
-
-        for name in vars:
-            if agg == 'mean':
-                grouped = df.groupby('DEPTH_BIN',observed=False)[name].mean()
-            else:
-                grouped = df.groupby('DEPTH_BIN',observed=False)[name].median()
-
-            # Align with bin labels
-            binned_data[name] = grouped.reindex(bin_labels).to_numpy()
-
-    else:
-        raise TypeError("Input must be an xarray.Dataset or pandas.DataFrame")
-
-    return binned_data
-
-def compute_mld(ds: xr.Dataset, var_density, method: str = 'threshold', threshold: float = 0.03, use_bins: bool = False, binning: float = 10):
+def compute_mld(ds: xr.Dataset, variable, method: str = 'threshold', threshold = 0.03, ref_depth = 10,
+                 use_bins: bool = False, binning: float = 10):
     """
     Computes the mixed layer depth (MLD) for each profile in the dataset. Two methods are available:
     1. **Threshold Method**: Computes MLD based on a density threshold (default is 0.03 kg/m³).
     2. **Convective Resistance (CR) Method**: Computes MLD based on the CR method. Values close to
     0 indicate a well-mixed layer, while values below 0 indicate a stratified layer. For the threshold,
-    a value of -2 is recommended.
+    a value of -2 is recommended. (based on Frajka-Williams 2014, https://doi.org/10.1175/JPO-D-13-069.1)
     
     Parameters
     ----------
     ds : xr.Dataset
         The dataset containing the profiles.
-    var_density : str
-        The name of the density variable in the dataset.
+    variable : str
+        Variable used for the MLD calculation. For the CR method use density anomaly with reference to 1000 dbar ('SIGMA_1').
     method : str, optional
         The method to use for MLD calculation. Options are 'threshold' or 'CR'. Default is 'threshold'.
     threshold : float, optional
         If using 'threshold', this is the density threshold for MLD calculation. Default is 0.03 kg/m³.
-        If using 'CR', this is the CR threshold for MLD calculation. A value of -2 is recommended.
+        If using 'CR', this is the CR threshold for the convective resistance. A value of -2 is recommended.
     use_bins : bool, optional
         Whether to use binned data for MLD calculation. Default is True.
     binning : float, optional
@@ -725,16 +646,18 @@ def compute_mld(ds: xr.Dataset, var_density, method: str = 'threshold', threshol
     Original Author: Till Moritz
     """
     if method == 'threshold':
-        utilities._check_necessary_variables(ds, [var_density,"DEPTH", "PROFILE_NUMBER"])
-        groups = utilities.group_by_profiles(ds, [var_density, "DEPTH"])
-        mld = groups.apply(mld_profile_treshhold, depth_col='DEPTH', density_col=var_density,
-                           use_bins=use_bins, binning=binning)
+        utilities._check_necessary_variables(ds, [variable,"DEPTH", "PROFILE_NUMBER"])
+        groups = utilities.group_by_profiles(ds, [variable, "DEPTH"])
+        mld = groups.apply(mld_profile_treshhold, variable=variable, threshold=threshold,
+                            ref_depth=ref_depth, use_bins=use_bins, binning=binning)
     elif method == 'CR':
-        var_density = 'SIGMA_1'
-        utilities._check_necessary_variables(ds, [var_density,"DEPTH", "PROFILE_NUMBER"])
-        groups = utilities.group_by_profiles(ds, [var_density, "DEPTH"])
+        if variable != 'SIGMA_1':
+            print(f"Warning: {variable} can not be used for convective resistance calulation. Instead use SIGMA_1 for CR calculation.")
+            variable = 'SIGMA_1'
+        utilities._check_necessary_variables(ds, [variable,"DEPTH", "PROFILE_NUMBER"])
+        groups = utilities.group_by_profiles(ds, [variable, "DEPTH"])
         if threshold > 0:
-            print(f"Warning: CR threshold should be negative. Using -2 as default.")
+            print("Warning: CR threshold should be negative. Using -2 as default.")
             threshold = -2
         mld = groups.apply(mld_profile_CR, threshold=threshold, use_bins=use_bins, binning=binning)
     else:
@@ -745,7 +668,7 @@ def linear_interpolation(x, y, x_new):
     """Linearly interpolates y over x to estimate y at x_new."""
     return np.interp(x_new, x, y)
 
-def mld_profile_treshhold(profile, depth_col: str = 'DEPTH', density_col: str = 'DENSITY', threshold: float = 0.03,
+def mld_profile_treshhold(profile, variable: str = 'SIGMA_T', threshold: float = 0.03, ref_depth: float = 10,
                           use_bins: bool = False, binning: float = 10) -> float:
     """
     Computes the mixed layer depth (MLD) from a profile dataset based on the density profile, 
@@ -755,12 +678,12 @@ def mld_profile_treshhold(profile, depth_col: str = 'DEPTH', density_col: str = 
     ----------
     profile : pd.DataFrame or xr.Dataset
         Dataset or DataFrame containing depth and density columns.
-    depth_col : str
-        Name of the depth column.
-    density_col : str
-        Name of the density column.
+    variable : str
+        The name of the variable to use for the threshold calculation (default is 'SIGMA_T').
     threshold : float
         Density threshold for MLD estimation (default is 0.03 kg/m³).
+    ref_depth : float
+        Reference depth for MLD estimation (default is 10m).
     use_bins : bool
         Whether to bin the profile data before computing MLD.
     binning : float
@@ -777,57 +700,63 @@ def mld_profile_treshhold(profile, depth_col: str = 'DEPTH', density_col: str = 
     """
     
     if use_bins:
-        binned = bin_data(profile, [density_col], resolution=binning)
-        depth = np.asarray(binned[depth_col])
-        density = np.asarray(binned[density_col])
+        profile = utilities.bin_profile(profile, [variable], binning=binning)
+        depth = profile['DEPTH'].to_numpy()
+        density = profile[variable].to_numpy()
     else:
         if isinstance(profile, pd.DataFrame):
-            depth = profile[depth_col].to_numpy()
-            density = profile[density_col].to_numpy()
+            depth = profile['DEPTH'].to_numpy()
+            density = profile[variable].to_numpy()
         elif isinstance(profile, xr.Dataset):
-            depth = profile[depth_col].values
-            density = profile[density_col].values
+            depth = profile['DEPTH'].values
+            density = profile[variable].values
         else:
             raise TypeError("Input must be a pandas.DataFrame or xarray.Dataset")
 
     # Remove NaNs
     valid = ~np.isnan(depth) & ~np.isnan(density)
     depth, density = depth[valid], density[valid]
+    # make sure depth is positive
+    if np.nanmean(np.diff(depth)) < 0:
+        depth = -1 * depth
 
     if depth.size == 0 or density.size == 0:
+        print("No valid data available for MLD calculation.")
         return np.nan
 
     # Sort by depth
     sort_idx = np.argsort(depth)
     depth, density = depth[sort_idx], density[sort_idx]
 
-    # Estimate density at 10m depth
-    if 10 in depth:
-        idx_10m = np.nanargmin(np.abs(depth - 10))
-        density_10m = density[idx_10m]
+    # Estimate density at reference depth
+    if ref_depth in depth:
+        idx_ref = np.nanargmin(np.abs(depth - ref_depth))
+        density_ref = density[idx_ref]
     else:
-        density_10m = linear_interpolation(depth, density, 10)
+        density_ref = linear_interpolation(depth, density, ref_depth)
 
-    # Focus on depths below 10m
-    mask_below = depth > 10
+    # Focus on depths below reference depth
+    mask_below = depth > ref_depth
     depth_below = depth[mask_below]
     density_below = density[mask_below]
 
     if depth_below.size == 0:
+        print(f"No data below reference depth {ref_depth} m")
         return np.nan
 
-    if np.nanmax(density_below) < density_10m + threshold:
+    if np.nanmax(density_below) < density_ref + threshold:
+        print(f"No density values below reference depth {ref_depth} m exceed the threshold.")
         return np.nan
 
     # Find first crossing of the threshold
     for i in range(1, len(density_below)):
-        if density_below[i] > density_10m + threshold:
+        if density_below[i] > density_ref + threshold:
             return (depth_below[i] + depth_below[i - 1]) / 2
 
     return np.nan
 
 
-def mld_profile_CR(profile, threshold: float = -2, use_bins: bool = False, binning: float = 10) -> float:
+def mld_profile_CR(profile, threshold: float = -2, use_bins: bool = True, binning: float = 10) -> float:
     """
     Calculate the mixed layer depth (MLD) using the Convective Resistance (CR) method.
     Returns NaN if no valid depth data below 10m is available or no CR values meet the threshold.
@@ -852,8 +781,10 @@ def mld_profile_CR(profile, threshold: float = -2, use_bins: bool = False, binni
     -----
     Original author: Till Moritz
     """
+    if use_bins:
+        profile = utilities.bin_profile(profile, ['SIGMA_1'], binning=binning)
 
-    CR_df = calculate_CR_for_all_depth(profile, use_bins=use_bins, binning=binning)
+    CR_df = calculate_CR_for_all_depth(profile)
     depth = CR_df['DEPTH'].to_numpy()
     CR_values = CR_df['CR'].to_numpy()
 
@@ -873,7 +804,7 @@ def mld_profile_CR(profile, threshold: float = -2, use_bins: bool = False, binni
     return np.nanmin(depth[below_threshold])
 
 
-def calculate_CR_for_all_depth(profile, use_bins=False, binning=10):
+def calculate_CR_for_all_depth(profile):
     """
     Calculate CR for all depths in the profile.
 
@@ -897,18 +828,12 @@ def calculate_CR_for_all_depth(profile, use_bins=False, binning=10):
     """
     required_vars = ['DEPTH', 'SIGMA_1']
 
-    if use_bins:
-        # Get binned data and turn into DataFrame
-        binned = bin_data(profile, required_vars, resolution=binning)
-        df_profile = pd.DataFrame(binned)
+    if isinstance(profile, xr.Dataset):
+        df_profile = profile[required_vars].to_dataframe().reset_index()
+    elif isinstance(profile, pd.DataFrame):
+        df_profile = profile[required_vars].copy()
     else:
-        # Use raw profile directly
-        if isinstance(profile, xr.Dataset):
-            df_profile = profile[required_vars].to_dataframe().reset_index()
-        elif isinstance(profile, pd.DataFrame):
-            df_profile = profile[required_vars].copy()
-        else:
-            raise TypeError("Input must be an xarray.Dataset or pandas.DataFrame.")
+        raise TypeError("Input must be an xarray.Dataset or pandas.DataFrame.")
 
     # Drop NaNs in SIGMA_1 to avoid problems
     df_profile = df_profile.dropna(subset=['SIGMA_1'])
@@ -923,7 +848,6 @@ def calculate_CR_for_all_depth(profile, use_bins=False, binning=10):
     
     #return CR_values, depths
     return pd.DataFrame({'DEPTH': depths, 'CR': CR_values})
-
 
 def compute_CR(profile, h: float) -> float:
     """
@@ -980,9 +904,9 @@ def compute_CR(profile, h: float) -> float:
     # Fill in missing top layer if needed
     min_depth = depth_masked[0]
     
-    if min_depth > 0 and min_depth <= 10:
+    if min_depth > 0 and min_depth <= 15:
         new_depth = np.arange(0, min_depth, 0.25)
-        top_mask = depth_masked <= 10
+        top_mask = depth_masked <= 15
         sigma1_top_mean = np.nanmean(sigma1_masked[top_mask])
         new_sigma1 = np.full_like(new_depth, sigma1_top_mean, dtype=float)
 
@@ -997,115 +921,3 @@ def compute_CR(profile, h: float) -> float:
     CR_h = integral - np.nanmax(depth_filled) * sigma1_h
 
     return CR_h
-
-def compute_mld_glidertools(ds, variable, thresh=0.01, ref_depth=10, verbose=True):
-    """
-    Calculate the Mixed Layer Depth (MLD) for an ungridded glider dataset.
-
-    This function computes the MLD by applying a threshold difference to a specified variable
-    (e.g., temperature or density). The default threshold is set for density (0.01).
-
-    Parameters
-    ----------
-    ds : xarray.Dataset
-        A dataset containing glider data, including depth, profile number and the variable of interest.
-    variable : str
-        The name of the variable (e.g., 'temperature' or 'density') used for the threshold calculation.
-    thresh : float, optional, default=0.01
-        The threshold for the difference in the variable. Typically used to detect the mixed layer.
-    ref_depth : float, optional, default=10
-        The reference depth (in meters) used to calculate the difference for the threshold.
-    verbose : bool, optional, default=True
-        If True, additional information and warnings are printed to the console.
-
-    Return
-    ------
-    mld : array
-        An array of depths corresponding to the MLD for each unique glider dive in the dataset.
-
-    Notes
-    -----
-    This function is based on the original GliderTools implementation and was modified by
-    Chiara Monforte to ensure compliance with the OG1 standards.
-    [Source Code](https://github.com/GliderToolsCommunity/GliderTools/blob/master/glidertools/physics.py)
-    """
-    utilities._check_necessary_variables(ds, [variable,"DEPTH", "PROFILE_NUMBER"])
-    groups = utilities.group_by_profiles(ds, [variable, "DEPTH"])
-    mld = groups.apply(mld_profile_glidertools, variable, thresh, ref_depth, verbose)
-    return mld
-
-
-def mld_profile_glidertools(df, variable, thresh, ref_depth, verbose=True):
-    """
-    Calculate the Mixed Layer Depth (MLD) for a single glider profile.
-
-    This function computes the MLD by applying a threshold difference to the specified variable
-    (e.g., temperature or density) for a given glider profile. The default threshold is set for density (0.01).
-
-    Parameters
-    ----------
-    df : pandas.DataFrame
-        A dataframe containing the glider profile data (including the variable of interest and depth).
-    variable : str
-        The name of the variable (e.g., 'temperature' or 'density') used for the threshold calculation.
-    thresh : float, optional, default=0.01
-        The threshold for the difference in the variable. Typically used to detect the mixed layer.
-    ref_depth : float, optional, default=10
-        The reference depth (in meters) used to calculate the difference for the threshold.
-    verbose : bool, optional, default=True
-        If True, additional information and warnings are printed to the console.
-
-    Returns
-    -------
-    mld : float or np.nan
-        The depth of the mixed layer, or np.nan if no MLD can be determined based on the threshold.
-
-    Notes
-    -----
-    This function is based on the original GliderTools implementation and was modified by
-    Chiara Monforte to ensure compliance with the OG1 standards.
-    [Source Code](https://github.com/GliderToolsCommunity/GliderTools/blob/master/glidertools/physics.py)
-    """
-    exception = False
-    divenum = df.index[0]
-    df = df.dropna(subset=[variable, "DEPTH"])
-    if len(df) == 0:
-        mld = np.nan
-        exception = True
-        message = """no observations found for specified variable in dive {}
-                """.format(
-            divenum
-        )
-    elif np.nanmin(np.abs(df.DEPTH.values - ref_depth)) > 5:
-        exception = True
-        message = """no observations within 5 m of ref_depth for dive {}
-                """.format(
-            divenum
-        )
-        mld = np.nan
-    else:
-        direction = 1 if np.nanmean(np.diff(df.DEPTH))> 0 else -1
-        # create arrays in order of increasing depth
-        var_arr = df[variable].values[:: int(direction)]
-        depth = df.DEPTH.values[:: int(direction)]
-        # get index closest to ref_depth
-        i = np.nanargmin(np.abs(depth - ref_depth))
-        # create difference array for threshold variable
-        dd = var_arr - var_arr[i]
-        # mask out all values that are shallower then ref_depth
-        dd[depth < ref_depth] = np.nan
-        # get all values in difference array within threshold range
-        mixed = dd[abs(dd) > thresh]
-        if len(mixed) > 0:
-            idx_mld = np.argmax(abs(dd) > thresh)
-            mld = depth[idx_mld]
-        else:
-            exception = True
-            mld = np.nan
-            message = """threshold criterion never true (all mixed or \
-                shallow profile) for profile {}""".format(
-                divenum
-            )
-    if verbose and exception:
-        warnings.warn(message)
-    return mld

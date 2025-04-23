@@ -118,9 +118,9 @@ def plot_basic_vars(ds: xr.Dataset, v_res=1, start_prof=0, end_prof=-1, ax=None)
     ds = utilities._calc_teos10_variables(ds)
     p = 1
     z = v_res
-    tempG, profG, depthG = utilities.construct_2dgrid(ds.PROFILE_NUMBER, ds.DEPTH, ds.TEMP, p, z)
-    salG, profG, depthG = utilities.construct_2dgrid(ds.PROFILE_NUMBER, ds.DEPTH, ds.PSAL, p, z)
-    denG, profG, depthG = utilities.construct_2dgrid(ds.PROFILE_NUMBER, ds.DEPTH, ds.DENSITY, p, z)
+    tempG, profG, depthG = utilities.construct_2dgrid(ds.PROFILE_NUMBER, ds.DEPTH, ds.TEMP, p, z,x_bin_center=False)
+    salG, profG, depthG = utilities.construct_2dgrid(ds.PROFILE_NUMBER, ds.DEPTH, ds.PSAL, p, z,x_bin_center=False)
+    denG, profG, depthG = utilities.construct_2dgrid(ds.PROFILE_NUMBER, ds.DEPTH, ds.DENSITY, p, z,x_bin_center=False)
 
     tempG = tempG[start_prof:end_prof, :]
     salG = salG[start_prof:end_prof, :]
@@ -180,7 +180,7 @@ def plot_basic_vars(ds: xr.Dataset, v_res=1, start_prof=0, end_prof=-1, ax=None)
                      bbox=dict(facecolor='white', alpha=0.5))
 
             if 'CHLA' in ds.variables:
-                chlaG, profG, depthG = utilities.construct_2dgrid(ds.PROFILE_NUMBER, ds.DEPTH, ds.CHLA, p, z)
+                chlaG, profG, depthG = utilities.construct_2dgrid(ds.PROFILE_NUMBER, ds.DEPTH, ds.CHLA, p, z,x_bin_center=False)
                 chlaG = chlaG[start_prof:end_prof, :]
                 ax2_1.plot(np.nanmean(chlaG, axis=0), depthG[0, :], c='green')
                 ax2_1.set_xlabel(xlabel=f'{utilities.plotting_labels("CHLA")} ({utilities.plotting_units(ds, "CHLA")})',
@@ -196,7 +196,7 @@ def plot_basic_vars(ds: xr.Dataset, v_res=1, start_prof=0, end_prof=-1, ax=None)
                            fontsize=int(new_font))
 
             if 'DOXY' in ds.variables:
-                oxyG, profG, depthG = utilities.construct_2dgrid(ds.PROFILE_NUMBER, ds.DEPTH, ds.DOXY, p, z)
+                oxyG, profG, depthG = utilities.construct_2dgrid(ds.PROFILE_NUMBER, ds.DEPTH, ds.DOXY, p, z,x_bin_center=False)
                 oxyG = oxyG[start_prof:end_prof, :]
                 ax[1].plot(np.nanmean(oxyG, axis=0), depthG[0, :], c='orange')
                 ax[1].set(xlabel=f'{utilities.plotting_labels("DOXY")} \n({utilities.plotting_units(ds, "DOXY")})')
@@ -1221,7 +1221,7 @@ def plot_hysteresis(ds, var='DOXY', v_res=1, threshold=2, ax=None):
     -----
     Original Author: Chiara Monforte
     """
-    varG, profG, depthG = utilities.construct_2dgrid(ds.PROFILE_NUMBER, ds.DEPTH, ds[var], 1, v_res)
+    varG, profG, depthG = utilities.construct_2dgrid(ds.PROFILE_NUMBER, ds.DEPTH, ds[var], 1, v_res,x_bin_center=False)
     df, diff, err_mean, err_range, rms = tools.compute_hyst_stat(ds, var=var, v_res=v_res)
     with plt.style.context(glidertest_style_file):
         if ax is None:
@@ -1556,8 +1556,8 @@ def plot_profile(ds: xr.Dataset, profile_num: int, vars: list = ['TEMP','PSAL','
     if len(vars) > 3:
         raise ValueError("Only three variables can be plotted at once, chose less variables")
     
-    with plt.style.context(glidertest_style_file):  # Assuming `plotting_style` is defined elsewhere
-        fig, ax1 = plt.subplots(figsize=(12, 9))  # Adjusted for profile visualization
+    with plt.style.context(glidertest_style_file):  
+        fig, ax1 = plt.subplots(figsize=(12, 9)) 
 
         # Select the specific profile
         profile = ds.where(ds.PROFILE_NUMBER == profile_num, drop=True)
@@ -1598,3 +1598,57 @@ def plot_profile(ds: xr.Dataset, profile_num: int, vars: list = ['TEMP','PSAL','
         ax1.set_title(f'Profile {profile_num} ({glider} on mission: {mission})')
 
     return fig, ax1
+
+def plot_CR(ds: xr.Dataset, profile_num: int, use_bins: bool = False, binning: float = 2):
+    """
+    Plots the convective resistance (CR) of a profile against depth based on calculate_CR_for_all_depth function.
+    For the calculation, the density anomaly with reference to 1000 kg/m3 is used ('SIGMA_1')
+
+    Parameters
+    ----------
+    ds: xarray.Dataset
+        Xarray dataset in OG1 format with at least PROFILE_NUMBER, DEPTH, SIGMA_1.
+    profile_num: int
+        The profile number to plot.
+    use_bins: bool
+        If True, use binned data instead of raw data.
+    binning: int
+        The depth resolution for binning.
+
+    Returns
+    -------
+    fig: matplotlib.figure.Figure
+        The figure object containing the plot.
+    ax: matplotlib.axes.Axes
+        The axis object containing the primary plot.
+
+    Notes
+    -----
+    Original Author: Till Moritz
+    """
+    vars = ['SIGMA_1', 'DEPTH']
+    utilities._check_necessary_variables(ds, vars + ['PROFILE_NUMBER'])
+
+    profile = ds.where(ds.PROFILE_NUMBER == profile_num, drop=True)
+
+    if use_bins:
+        profile = utilities.bin_profile(profile, vars, binning)
+
+    CR_df = tools.calculate_CR_for_all_depth(profile)
+
+    depth = CR_df['DEPTH'].values
+    CR = CR_df['CR'].values
+
+    with plt.style.context(glidertest_style_file):
+        fig, ax = plt.subplots(figsize=(12, 9))
+        ax.plot(CR, depth, label='CR')
+        ax.scatter(CR, depth, marker='o', s=10+binning)
+        ax.set_xlabel('Convective Resistance (CR)')
+        ax.set_ylabel('Depth (m)')
+        ax.invert_yaxis()
+        ax.set_title(f'Profile {profile_num} (Convective Resistance)')
+        ax.grid(True)
+        ax.legend()
+        plt.show()
+    
+    return fig, ax

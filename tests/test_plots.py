@@ -132,3 +132,9 @@ def test_plot_profile():
     ds = fetchers.load_sample_dataset()
     prof_num = ds.PROFILE_NUMBER[0].values
     plots.plot_profile(ds, profile_num=prof_num)
+
+def test_plot_CR():
+    ds = fetchers.load_sample_dataset()
+    ds = tools.add_sigma_1(ds)
+    prof_num = ds.PROFILE_NUMBER[0].values
+    plots.plot_CR(ds,profile_num=prof_num)
