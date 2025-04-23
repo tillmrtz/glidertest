@@ -38,10 +38,7 @@ def quant_updown_bias(ds, var='PSAL', v_res=1):
     z = v_res  # Vertical resolution
 
     if var in ds.variables:
-        #varG, profG, depthG = utilities.construct_2dgrid(ds.PROFILE_NUMBER, ds.DEPTH, ds[var], p, z)
-        binned = utilities.bin_profile(ds, [var], binning=z)
-        varG = binned[var].to_numpy()
-        depthG = binned['DEPTH'].to_numpy()
+        varG, profG, depthG = utilities.construct_2dgrid(ds.PROFILE_NUMBER, ds.DEPTH, ds[var], p, z, x_bin_center = False) ## included x_bin_center = False to take left edge of the bin (profile number i.e. 1,2 ....)
 
         grad = np.diff(varG, axis=0)  # Horizontal gradients
         with warnings.catch_warnings():
@@ -378,10 +375,7 @@ def quant_hysteresis(ds: xr.Dataset, var='DOXY', v_res=1):
     z = v_res  # Vertical resolution
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=RuntimeWarning)
-        #varG, profG, depthG = utilities.construct_2dgrid(ds.PROFILE_NUMBER, ds.DEPTH, ds[var], p, z)
-        binned = utilities.bin_profile(ds, [var], binning=z)
-        varG = binned[var].to_numpy()
-        depthG = binned['DEPTH'].to_numpy()
+        varG, profG, depthG = utilities.construct_2dgrid(ds.PROFILE_NUMBER, ds.DEPTH, ds[var], p, z, x_bin_center = False) ## included x_bin_center = False to take left edge of the bin (profile number i.e. 1,2 ....)
 
         dive = np.nanmedian(varG[0::2, :], axis=0)  # Dive
         climb = np.nanmedian(varG[1::2, :], axis=0)  # Climb
@@ -716,13 +710,13 @@ def mld_profile_treshhold(profile, variable: str = 'SIGMA_T', threshold: float =
     # Remove NaNs
     valid = ~np.isnan(depth) & ~np.isnan(density)
     depth, density = depth[valid], density[valid]
-    # make sure depth is positive
-    if np.nanmean(np.diff(depth)) < 0:
-        depth = -1 * depth
 
     if depth.size == 0 or density.size == 0:
         print("No valid data available for MLD calculation.")
         return np.nan
+    
+    if np.nanmean(np.diff(depth)) < 0:
+        depth = -1 * depth
 
     # Sort by depth
     sort_idx = np.argsort(depth)

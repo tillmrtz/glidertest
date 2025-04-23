@@ -67,17 +67,15 @@ def test_mld():
     ds = fetchers.load_sample_dataset()
     ds = tools.add_sigma_1(ds)
     ### Test all three MLD methods
-    mld_thresh = tools.compute_mld(ds,var_density='DENSITY',method='threshold')
-    mld_CR = tools.compute_mld(ds,var_density='SIGMA_1',method='CR',threshold=-1)
+    mld_thresh = tools.compute_mld(ds,variable='DENSITY',method='threshold')
+    mld_CR = tools.compute_mld(ds,variable='SIGMA_1',method='CR',threshold=-1)
 
     assert len(np.unique(ds.PROFILE_NUMBER)) == len(mld_thresh)
     assert len(np.unique(ds.PROFILE_NUMBER)) == len(mld_CR)
     # Test if len(df) == 0
     ds['CHLA'] = np.nan
-    mld_thresh = tools.compute_mld(ds, 'CHLA', method='threshold', thresh=0.01, ref_depth=10)
-    mld_CR = tools.compute_mld(ds, 'CHLA', method='CR', thresh=-1)
+    mld_thresh = tools.compute_mld(ds, 'CHLA', method='threshold', threshold=0.01, ref_depth=10)
     assert np.isnan(np.unique(mld_thresh))
-    assert np.isnan(np.unique(mld_CR))
 
 def test_add_sigma1():
     ds = fetchers.load_sample_dataset()

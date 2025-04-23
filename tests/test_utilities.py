@@ -40,4 +40,4 @@ def test_bin_profile():
     ds = fetchers.load_sample_dataset()
     prof_num = ds.PROFILE_NUMBER[0].values
     ds_profile = ds.where(ds.PROFILE_NUMBER == prof_num, drop=True)
-    utilities.bin_profile(ds_profile, var='TEMP', bin_size=5)
+    utilities.bin_profile(ds_profile, vars=['TEMP'], binning=5)
