@@ -611,7 +611,7 @@ def compute_mld(ds: xr.Dataset, variable, method: str = 'threshold', threshold =
     1. **Threshold Method**: Computes MLD based on a density threshold (default is 0.03 kg/m³).
     2. **Convective Resistance (CR) Method**: Computes MLD based on the CR method. Values close to
     0 indicate a well-mixed layer, while values below 0 indicate a stratified layer. For the threshold,
-    a value of -2 is recommended. (based on Frajka-Williams 2014, https://doi.org/10.1175/JPO-D-13-069.1)
+    a value of -2 is recommended.
     
     Parameters
     ----------
@@ -631,30 +631,35 @@ def compute_mld(ds: xr.Dataset, variable, method: str = 'threshold', threshold =
 
     Returns
     -------
-    mld_values : numpy array
-        Array of MLD values for each profile.
+    mld_values : pd.DataFrame
+        A DataFrame containing the MLD values for each profile, along with the mean time for each profile.
+        The DataFrame has columns: 'PROFILE_NUMBER', 'MLD' and 'TIME'.
 
     Notes
     -----
     Original Author: Till Moritz
+    Based on the convective resistance caluclation, following the method described in FW2014 (https://doi.org/10.1175/JPO-D-13-069.1))
     """
+    utilities._check_necessary_variables(ds, [variable,"DEPTH", "PROFILE_NUMBER","TIME"])
     if method == 'threshold':
-        utilities._check_necessary_variables(ds, [variable,"DEPTH", "PROFILE_NUMBER"])
-        groups = utilities.group_by_profiles(ds, [variable, "DEPTH"])
+        groups = utilities.group_by_profiles(ds, [variable, "DEPTH","TIME"])
         mld = groups.apply(mld_profile_treshhold, variable=variable, threshold=threshold,
                             ref_depth=ref_depth, use_bins=use_bins, binning=binning)
     elif method == 'CR':
         if variable != 'SIGMA_1':
             print(f"Warning: {variable} can not be used for convective resistance calulation. Instead use SIGMA_1 for CR calculation.")
             variable = 'SIGMA_1'
-        utilities._check_necessary_variables(ds, [variable,"DEPTH", "PROFILE_NUMBER"])
-        groups = utilities.group_by_profiles(ds, [variable, "DEPTH"])
+        groups = utilities.group_by_profiles(ds, [variable, "DEPTH","TIME"])
         if threshold > 0:
             print("Warning: CR threshold should be negative. Using -2 as default.")
             threshold = -2
         mld = groups.apply(mld_profile_CR, threshold=threshold, use_bins=use_bins, binning=binning)
     else:
         raise ValueError("Invalid MLD calculation method. Use 'threshold' or 'CR'.")
+    # Convert the result to a DataFrame and name the MLD column
+    mld = mld.reset_index(name='MLD')
+    # Add mean time for each profile to the DataFrame
+    mld['TIME'] = groups.TIME.mean().values
     return mld
 
 def linear_interpolation(x, y, x_new):

@@ -75,7 +75,7 @@ def test_mld():
     # Test if len(df) == 0
     ds['CHLA'] = np.nan
     mld_thresh = tools.compute_mld(ds, 'CHLA', method='threshold', threshold=0.01, ref_depth=10)
-    assert np.isnan(np.unique(mld_thresh))
+    assert np.isnan(np.unique(mld_thresh['MLD']))
 
 def test_add_sigma1():
     ds = fetchers.load_sample_dataset()
