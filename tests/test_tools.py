@@ -48,6 +48,7 @@ def test_vert_vel():
     ds_climbs = ds_climbs.drop_vars(['LATITUDE'])
     with pytest.raises(KeyError) as e:
         tools.quant_binavg(ds_climbs, var='VERT_CURR_MODEL', dz=10)
+
 def test_hyst():
     ds = fetchers.load_sample_dataset()
     df_h = tools.quant_hysteresis(ds, var = 'DOXY', v_res = 1)
@@ -62,7 +63,7 @@ def test_sop():
 def test_maxdepth():
     ds = fetchers.load_sample_dataset()
     tools.max_depth_per_profile(ds)
-
+    
 def test_mld():
     ds = fetchers.load_sample_dataset()
     ds = tools.add_sigma_1(ds)

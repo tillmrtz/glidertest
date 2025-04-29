@@ -239,6 +239,10 @@ def bin_profile(ds_profile, vars, binning, agg: str = 'mean'):
     depth = ds_profile['DEPTH'].values[msk]
     profile_number = profile_number[msk]
 
+    # Check for short or empty input data and return empty DataFrame
+    if any(len(ds_profile[var]) <= 1 for var in vars) or len(depth) <= 1:
+        return pd.DataFrame(columns=vars + ['DEPTH', 'PROFILE_NUMBER'])
+
     for var in vars:
         var_grid, prof_num_grid, depth_grid = construct_2dgrid(profile_number, depth, ds_profile[var].values[msk],
                                                                 xi=1, yi=binning, x_bin_center=False, y_bin_center=True, agg=agg)

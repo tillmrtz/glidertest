@@ -660,6 +660,7 @@ def compute_mld(ds: xr.Dataset, variable, method: str = 'threshold', threshold =
     mld = mld.reset_index(name='MLD')
     # Add mean time for each profile to the DataFrame
     mld['TIME'] = groups.TIME.mean().values
+    mld['TIME'] = mld['TIME'].dt.round('1min')
     return mld
 
 def linear_interpolation(x, y, x_new):
@@ -711,13 +712,17 @@ def mld_profile_treshhold(profile, variable: str = 'SIGMA_T', threshold: float =
         else:
             raise TypeError("Input must be a pandas.DataFrame or xarray.Dataset")
 
-    # Remove NaNs
-    valid = ~np.isnan(depth) & ~np.isnan(density)
-    depth, density = depth[valid], density[valid]
+    # Convert to float arrays to avoid isfinite errors
+    depth = np.asarray(depth, dtype=np.float64)
+    density = np.asarray(density, dtype=np.float64)
 
-    if depth.size == 0 or density.size == 0:
-        print("No valid data available for MLD calculation.")
+    # Remove NaNs and check if valid data remains
+    valid = np.isfinite(depth) & np.isfinite(density)
+    if not np.any(valid):
+        print("No valid depth or density data for MLD calculation.")
         return np.nan
+
+    depth, density = depth[valid], density[valid]
     
     if np.nanmean(np.diff(depth)) < 0:
         depth = -1 * depth
@@ -749,7 +754,8 @@ def mld_profile_treshhold(profile, variable: str = 'SIGMA_T', threshold: float =
     # Find first crossing of the threshold
     for i in range(1, len(density_below)):
         if density_below[i] > density_ref + threshold:
-            return (depth_below[i] + depth_below[i - 1]) / 2
+            mld = (depth_below[i] + depth_below[i - 1]) / 2
+            return round(mld, 1)
 
     return np.nan
 
@@ -798,8 +804,10 @@ def mld_profile_CR(profile, threshold: float = -2, use_bins: bool = True, binnin
     below_threshold = CR_values < threshold
     if not np.any(below_threshold):
         return np.nan
+    
+    mld = np.nanmin(depth[below_threshold])
 
-    return np.nanmin(depth[below_threshold])
+    return round(mld, 1)
 
 
 def calculate_CR_for_all_depth(profile):

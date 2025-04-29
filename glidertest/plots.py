@@ -321,7 +321,7 @@ def plot_daynight_avg(ds,var='PSAL', ax: plt.Axes = None, sel_day=None, **kw: di
     Original Author: Chiara Monforte
 
     """
-    day, night = tools.compute_daynight_avg(ds, sel_var=var)
+    day, night = tools.compute_daynight_avg(ds, sel_var=var,start_time=sel_day,end_time=sel_day)
     if not sel_day:
         dates = list(day.date.dropna().values) + list(night.date.dropna().values)
         dates.sort()
@@ -889,14 +889,16 @@ def plot_sampling_period(ds: xr.Dataset, ax: plt.Axes = None, variable='TEMP'):
 
     return ax
 
-def plot_ts(ds: xr.Dataset, axs: plt.Axes = None, **kw: dict) -> tuple({plt.Figure, plt.Axes}):
+def plot_ts(ds: xr.Dataset, percentile: list = [0.5,99.5], axs: plt.Axes = None, **kw: dict) -> tuple({plt.Figure, plt.Axes}):
     """
     Plots **temperature and salinity distributions** using histograms and a 2D density plot.
 
     Parameters
     ----------
     ds : xarray.Dataset  
-        Dataset in **OG1 format**, containing at least **DEPTH, LONGITUDE, LATITUDE, TEMP and PSAL**.  
+        Dataset in **OG1 format**, containing at least **DEPTH, LONGITUDE, LATITUDE, TEMP and PSAL**. 
+    percentile : list, optional
+        The percentiles to use for filtering the data. Default is [0.5, 99.5].
     axs : matplotlib.axes.Axes, optional  
         Axes to plot the data. If not provided, a new figure and axes are created.  
     kw : dict, optional  
@@ -932,41 +934,32 @@ def plot_ts(ds: xr.Dataset, axs: plt.Axes = None, **kw: dict) -> tuple({plt.Figu
         axs[5].set_visible(False)
         num_bins = 30
 
-        temp_orig = ds.TEMP.values
-        sal_orig = ds.PSAL.values
+        # Create a mask once for valid data points
+        mask = np.isfinite(ds.TEMP.values) & np.isfinite(ds.PSAL.values)
+        temp, sal, depth, long, lat = (ds[var].values[mask] for var in ['TEMP', 'PSAL', 'DEPTH', 'LONGITUDE', 'LATITUDE'])
 
-        # Reduce both to where both are finite
-        temp = temp_orig[np.isfinite(temp_orig) & np.isfinite(sal_orig)]
-        sal = sal_orig[np.isfinite(sal_orig) & np.isfinite(temp_orig)]
-        depth = ds.DEPTH[np.isfinite(sal_orig) & np.isfinite(temp_orig)]
-        long = ds.LONGITUDE[np.isfinite(sal_orig) & np.isfinite(temp_orig)]
-        lat = ds.LATITUDE[np.isfinite(sal_orig) & np.isfinite(temp_orig)]
-
+        # Convert to Absolute Salinity (SA) and Conservative Temperature (CT)
         SA = gsw.SA_from_SP(sal, depth, long, lat)
         CT = gsw.CT_from_t(SA, temp, depth)
 
-        # Reduce to middle 99% of values
-        # This helps a lot for plotting, but is also hiding some of the data (not great for a test)
-        CT_filtered = CT[(CT >= np.nanpercentile(CT, .5)) & (CT <= np.nanpercentile(CT, 99.5))]
-        SA_filtered = SA[(SA >= np.nanpercentile(SA, .5)) & (SA <= np.nanpercentile(SA, 99.5))]
-        print('Temperature and Salinity values have been filtered to the middle 99% of values.')
+        # Filter within percentile range
+        p_low, p_high = np.nanpercentile(CT, percentile), np.nanpercentile(SA, percentile)
+        CT_filtered, SA_filtered = CT[(p_low[0] <= CT) & (CT <= p_low[1])], SA[(p_high[0] <= SA) & (SA <= p_high[1])]
+        print(f"Filtered values between {percentile[0]}% and {percentile[1]}% percentiles.")
 
-        # Calculate density to add contours
-        xi = np.linspace(SA_filtered.values.min() - .2, SA_filtered.values.max() + .2, 100)
-        yi = np.linspace(CT_filtered.values.min() - .2, CT_filtered.values.max() + .2, 100)
-        xi, yi = np.meshgrid(xi, yi)
-        zi = gsw.sigma0(xi, yi)
+        # Generate density contours efficiently
+        xi, yi = np.meshgrid(np.linspace(SA_filtered.min() - 0.2, SA_filtered.max() + 0.2, 100),
+                             np.linspace(CT_filtered.min() - 0.2, CT_filtered.max() + 0.2, 100))
+        zi = gsw.sigma0(xi.ravel(), yi.ravel()).reshape(xi.shape)
 
-        # Temperature histogram
+        # Temperature Histogram
         axs[0].hist(CT_filtered, bins=num_bins, orientation="horizontal", **kw)
-        axs[0].set_ylabel('Conservative Temperature (°C)')
-        axs[0].set_xlabel('Frequency', rotation="horizontal")
+        axs[0].set(ylabel='Conservative Temperature (°C)', xlabel='Frequency')
         axs[0].invert_xaxis()
 
-        # Salinity histogram
+        # Salinity Histogram
         axs[4].hist(SA_filtered, bins=num_bins, **kw)
-        axs[4].set_xlabel('Absolute Salinity ( )')
-        axs[4].set_ylabel('Frequency', rotation="vertical")
+        axs[4].set(xlabel='Absolute Salinity', ylabel='Frequency')
         axs[4].yaxis.set_label_position("right")
         axs[4].yaxis.tick_right()
         axs[4].invert_yaxis()
