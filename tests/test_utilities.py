@@ -24,6 +24,7 @@ def test_depth_z():
     ds = utilities.calc_DEPTH_Z(ds)
     assert 'DEPTH_Z' in ds.variables
     assert ds.DEPTH_Z.min() < -50
+
 def test_labels():
     ds = fetchers.load_sample_dataset()
     var = 'PITCH'
@@ -34,3 +35,9 @@ def test_labels():
     assert label == 'Temperature'
     unit=utilities.plotting_units(ds, var)
     assert unit == "°C"
+
+def test_bin_profile():
+    ds = fetchers.load_sample_dataset()
+    prof_num = ds.PROFILE_NUMBER[0].values
+    ds_profile = ds.where(ds.PROFILE_NUMBER == prof_num, drop=True)
+    utilities.bin_profile(ds_profile, vars=['TEMP'], binning=5)

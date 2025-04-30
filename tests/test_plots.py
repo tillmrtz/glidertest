@@ -128,7 +128,13 @@ def test_plot_max_depth():
     ds = fetchers.load_sample_dataset()
     plots.plot_max_depth_per_profile(ds)
 
-def test_plot_profile_binned():
+def test_plot_profile():
     ds = fetchers.load_sample_dataset()
-    profile_num = ds.PROFILE_NUMBER.values[0]
-    plots.plot_profile_binned(ds, profile_num = profile_num, vars = ['DOXY'])
+    prof_num = ds.PROFILE_NUMBER[0].values
+    plots.plot_profile(ds, profile_num=prof_num)
+
+def test_plot_CR():
+    ds = fetchers.load_sample_dataset()
+    ds = tools.add_sigma_1(ds)
+    prof_num = ds.PROFILE_NUMBER[0].values
+    plots.plot_CR(ds,profile_num=prof_num)

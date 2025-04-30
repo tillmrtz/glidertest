@@ -125,13 +125,16 @@ def _select_time_formatter_and_locator(ds):
         formatter = DateFormatter('%d-%b')
         locator = None
         xlabel = 'Time [UTC]'
-
+        
     return formatter, locator, xlabel
+        
+def construct_2dgrid(x, y, v, xi=1, yi=1, x_bin_center: bool = True, y_bin_center: bool = True, agg: str = 'median'):
 
-
-def construct_2dgrid(x, y, v, xi=1, yi=1):
     """
-    Constructs a 2D gridded representation of input data based on specified resolutions.
+    Constructs a 2D gridded representation of input data based on specified resolutions. The function takes in x, y, and v data,
+    and generates a grid where each cell contains the aggregated value (e.g., mean, median) of v corresponding to the x and y coordinates.
+    If the input data is already binned and you want the grid coordinates to align with the original bin edges, set `x_bin_center` and `y_bin_center` to False and the 
+    resolution (i.e. xi and yi) to the bin size.
 
     Parameters
     ----------
@@ -144,7 +147,17 @@ def construct_2dgrid(x, y, v, xi=1, yi=1):
     xi : int or float, optional, default=1  
         Resolution for the x-dimension grid spacing.  
     yi : int or float, optional, default=1  
-        Resolution for the y-dimension grid spacing.  
+        Resolution for the y-dimension grid spacing.
+    x_bin_center : bool, optional, default=True
+        If True, the x-coordinate grid (`XI`) corresponds to the **center** of each x-bin.
+        If False, it corresponds to the **left edge** of each bin.
+        This is especially useful if the input `x` data is already binned with the same resolution as `xi`,
+        and you want the grid coordinates to align with the original bin edges. (e.g. profile numbers).
+    y_bin_center : bool, optional, default=True
+        Same as `x_bin_center`, but for the y-coordinate grid (`YI`).
+        Set to False if your `y` data is already pre-binned with the same resolution as `yi`.
+    agg : str, optional, default='median'
+        Aggregation method to be used for gridding. Options include 'mean', 'median', etc.
 
     Returns
     -------
@@ -157,22 +170,87 @@ def construct_2dgrid(x, y, v, xi=1, yi=1):
 
     Notes
     -----
-    Original Author: Bastien Queste  
-    [Source Code](https://github.com/bastienqueste/gliderad2cp/blob/de0652f70f4768c228f83480fa7d1d71c00f9449/gliderad2cp/process_adcp.py#L140)  
+    Original Author: Bastien Queste
+    [Source Code](https://github.com/bastienqueste/gliderad2cp/blob/de0652f70f4768c228f83480fa7d1d71c00f9449/gliderad2cp/process_adcp.py#L140)
+    
+    Modified by Till Moritz: added the aggregation parameter and the option to chose either bin center or bin edge as the grid coordinates.
     """
-
     if np.size(xi) == 1:
-        xi = np.arange(np.nanmin(x), np.nanmax(x) + xi, xi)
+        xi = np.arange(np.nanmin(x), np.nanmax(x) + xi+1, xi)
     if np.size(yi) == 1:
-        yi = np.arange(np.nanmin(y), np.nanmax(y) + yi, yi)
+        yi = np.arange(np.nanmin(y), np.nanmax(y) + yi+1, yi)
+
     raw = pd.DataFrame({'x': x, 'y': y, 'v': v}).dropna()
-    grid = np.full([np.size(xi), np.size(yi)], np.nan)
-    raw['xbins'], xbin_iter = pd.cut(raw.x, xi, retbins=True, labels=False)
-    raw['ybins'], ybin_iter = pd.cut(raw.y, yi, retbins=True, labels=False)
-    _tmp = raw.groupby(['xbins', 'ybins'])['v'].agg('median')
+    grid = np.full([len(xi)-1, len(yi)-1], np.nan)
+
+    raw['xbins'], xbin_iter = pd.cut(raw.x, xi, retbins=True, labels=False, include_lowest=True, right=False)
+    raw['ybins'], ybin_iter = pd.cut(raw.y, yi, retbins=True, labels=False, include_lowest=True, right=False)
+
+    raw = raw.dropna(subset=['xbins', 'ybins'])  # Remove out-of-bound rows
+    _tmp = raw.groupby(['xbins', 'ybins'])['v'].agg(agg)
     grid[_tmp.index.get_level_values(0).astype(int), _tmp.index.get_level_values(1).astype(int)] = _tmp.values
+    # Match XI and YI shape to grid using bin centers
+    if x_bin_center:
+        xi = xi[:-1] + np.diff(xi) / 2
+    else:
+        xi = xi[:-1]
+    if y_bin_center:
+        yi = yi[:-1] + np.diff(yi) / 2
+    else:
+        yi = yi[:-1]
     YI, XI = np.meshgrid(yi, xi)
     return grid, XI, YI
+
+
+def bin_profile(ds_profile, vars, binning, agg: str = 'mean'):
+    """
+    Bins the data for a single profile using the construct_2dgrid function. The binning determines the depth resolution.
+
+    Parameters
+    ----------
+    ds_profile : xr.Dataset or pd.DataFrame
+        The dataset or dataframe containing the data of one profile containing at least 'DEPTH', 'PROFILE_NUMBER' and the variables to bin.
+    vars : list
+        The variables to bin.
+    binning : float
+        The depth resolution for binning.
+    agg : str, optional
+        The aggregation method ('mean' or 'median'). Default is 'mean'.
+
+    Returns
+    -------
+    binned_profile: pd.DataFrame
+        A dataframe containing the binned data for the selected profile.
+
+    Notes
+    -----
+    Original author: Till Moritz
+    """
+    ## check if only one profile is selected
+    if isinstance(ds_profile, xr.Dataset):
+        profile_number = ds_profile['PROFILE_NUMBER'].values
+    elif isinstance(ds_profile, pd.DataFrame):
+        profile_number = ds_profile.index.values
+    if len(np.unique(profile_number)) > 1:
+        raise ValueError("Only one profile can be selected for binning.")
+    
+    binned_data = {}
+    msk = ds_profile['DEPTH'].values > 0
+    depth = ds_profile['DEPTH'].values[msk]
+    profile_number = profile_number[msk]
+
+    # Check for short or empty input data and return empty DataFrame
+    if any(len(ds_profile[var]) <= 1 for var in vars) or len(depth) <= 1:
+        return pd.DataFrame(columns=vars + ['DEPTH', 'PROFILE_NUMBER'])
+
+    for var in vars:
+        var_grid, prof_num_grid, depth_grid = construct_2dgrid(profile_number, depth, ds_profile[var].values[msk],
+                                                                xi=1, yi=binning, x_bin_center=False, y_bin_center=True, agg=agg)
+        binned_data[var] = var_grid[0]
+    binned_data['DEPTH'] = depth_grid[0]
+    binned_data['PROFILE_NUMBER'] = prof_num_grid[0]
+
+    return pd.DataFrame(binned_data)
 
 def compute_sunset_sunrise(time, lat, lon):
     """
@@ -333,7 +411,6 @@ def calc_DEPTH_Z(ds):
         "standard_name": "depth",
         "comment": "Depth calculated from pressure using gsw library, positive up.",
     }
-    
     return ds
 
 label_dict={

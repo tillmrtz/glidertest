@@ -78,7 +78,7 @@ def interactive_profile(ds):
 
     def plot_profile(profile_num, var1, var2, var3, use_bins, binning):
         vars = [var1, var2, var3]
-        fig, ax = plots.plot_profile_binned(ds, profile_num, vars, use_bins, binning)
+        fig, ax = plots.plot_profile(ds, profile_num, vars, use_bins, binning)
         display(fig)
         plt.close(fig)
         del fig, ax

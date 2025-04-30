@@ -48,6 +48,7 @@ def test_vert_vel():
     ds_climbs = ds_climbs.drop_vars(['LATITUDE'])
     with pytest.raises(KeyError) as e:
         tools.quant_binavg(ds_climbs, var='VERT_CURR_MODEL', dz=10)
+
 def test_hyst():
     ds = fetchers.load_sample_dataset()
     df_h = tools.quant_hysteresis(ds, var = 'DOXY', v_res = 1)
@@ -62,22 +63,21 @@ def test_sop():
 def test_maxdepth():
     ds = fetchers.load_sample_dataset()
     tools.max_depth_per_profile(ds)
-
-def test_bin_data():
-    ds = fetchers.load_sample_dataset()
-    profile_num = ds.PROFILE_NUMBER.values[0]
-    ds_profile = ds.isel(N_MEASUREMENTS = ds.PROFILE_NUMBER == profile_num)
-    tools.bin_data(ds_profile, vars = ['DOXY'], resolution = 10)
-
     
 def test_mld():
     ds = fetchers.load_sample_dataset()
-    mld = tools.compute_mld_glidertools(ds, 'TEMP')
-    assert len(np.unique(ds.PROFILE_NUMBER)) == len(mld)
+    ds = tools.add_sigma_1(ds)
+    ### Test all three MLD methods
+    mld_thresh = tools.compute_mld(ds,variable='DENSITY',method='threshold')
+    mld_CR = tools.compute_mld(ds,variable='SIGMA_1',method='CR',threshold=-1)
+
+    assert len(np.unique(ds.PROFILE_NUMBER)) == len(mld_thresh)
+    assert len(np.unique(ds.PROFILE_NUMBER)) == len(mld_CR)
     # Test if len(df) == 0
     ds['CHLA'] = np.nan
-    mld = tools.compute_mld_glidertools(ds, 'CHLA', thresh=0.01, ref_depth=10, verbose=True)
-    assert np.isnan(np.unique(mld))
-    # Test elif np.nanmin(np.abs(df.DEPTH.values - ref_depth)) > 5
-    mld = tools.compute_mld_glidertools(ds, 'TEMP', thresh=0.01, ref_depth=500, verbose=True)
-    assert np.isnan(np.unique(mld))
+    mld_thresh = tools.compute_mld(ds, 'CHLA', method='threshold', threshold=0.01, ref_depth=10)
+    assert np.isnan(np.unique(mld_thresh['MLD']))
+
+def test_add_sigma1():
+    ds = fetchers.load_sample_dataset()
+    tools.add_sigma_1(ds)
