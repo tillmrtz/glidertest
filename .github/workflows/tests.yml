@@ -30,6 +30,10 @@ jobs:
         create-args: >-
           python=${{ matrix.python-version }} --file requirements-dev.txt --channel conda-forge
 
+    - name: Install rstcloth (PyPI-only)
+      run: |
+        micromamba run pip install rstcloth
+
     - name: Install glidertest
       run: |
         python -m pip install -e . --no-deps --force-reinstall

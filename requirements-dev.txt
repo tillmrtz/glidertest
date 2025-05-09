@@ -22,3 +22,4 @@ ioos_qc
 folium
 Ipython
 ipywidgets
+pypandoc
