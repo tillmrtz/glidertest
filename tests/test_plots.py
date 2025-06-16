@@ -138,3 +138,8 @@ def test_plot_CR():
     ds = tools.add_sigma_1(ds)
     prof_num = ds.PROFILE_NUMBER[0].values
     plots.plot_CR(ds,profile_num=prof_num)
+
+def test_plot_section():
+    ds = fetchers.load_sample_dataset()
+    mld = tools.compute_mld(ds,variable = 'DENSITY', use_bins = True)
+    plots.plot_section(ds,mld_df=mld)
