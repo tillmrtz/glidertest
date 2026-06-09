@@ -545,3 +545,4 @@ def group_by_profiles(ds, variables=None):
         return ds[variables].groupby("PROFILE_NUMBER")
     else:
         return ds.groupby("PROFILE_NUMBER")
+        
