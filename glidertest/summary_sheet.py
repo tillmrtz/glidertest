@@ -657,7 +657,7 @@ def rst_to_md(path, filename):
     pypandoc.convert_file(f'{path}/{filename}.rst', 'md', format='rst', outputfile=f'{path}/{filename}.md')
     print(f"Converted RST to Markdown and saved to: {path}")
 
-def mission_report(ds, report_folder_path, type='General'):
+def mission_report(ds, report_folder_path, report_type='General'):
     """
     Generate a full mission report for a glider deployment, including plots and summary documents
     in both reStructuredText (.rst) and Markdown (.md) formats.
@@ -672,7 +672,7 @@ def mission_report(ds, report_folder_path, type='General'):
     report_folder_path : str or Path
         Path to the parent directory where the report folder will be created.
 
-    type : str, optional
+    report_type : str, optional
         Type of report to generate. Accepts either 'General' (default) or 'Optics'.
         - 'General' includes a glider track and basic variables.
         - 'Optics' includes additional analyses and plots specific to optical sensors (e.g., CHLA, BBP700).
@@ -687,24 +687,27 @@ def mission_report(ds, report_folder_path, type='General'):
 
     Notes
     -----
-    - The `type='Optics'` report is only created if relevant optical sensors are found in the dataset.
+    - The `report_type='Optics'` report is only created if relevant optical sensors are found in the dataset.
 
     Original Author: Chiara Monforte
     """
-    folder_name = 'summary_sheet'+type+str(datetime.today().strftime('%Y%m%d'))
-    report_dir = f'{report_folder_path}/{folder_name}'
-    if not Path(report_dir).is_dir():
-        Path(report_dir).mkdir()
+    folder_name = 'summary_sheet_' + ds.attrs['id'] +report_type+str(datetime.today().strftime('%Y%m%d'))
+    if type(report_folder_path) is str:
+        report_folder_path = Path.cwd()
+    report_dir = report_folder_path / folder_name
+    if not report_dir.is_dir():
+        Path(report_dir).mkdir(parents=True)
+        print(f"writing reports to directory {report_dir}")
 
     matplotlib.use('Agg')
-    if type=='General':
+    if report_type=='General':
         fig_gt, ax_gt = plots.plot_glider_track(ds)
         fig_bv, ax_bv = plots.plot_basic_vars(ds, v_res=1, start_prof=0, end_prof=-1)
         fig_gt.savefig(f'{report_dir}/gt.png')
         fig_bv.savefig(f'{report_dir}/bv.png')
         create_docfile(ds, report_dir)
         rst_to_md(Path(report_dir), 'summary')
-    if type=='Optics':
+    if report_type=='Optics':
         available_sensor, _, _ = optics_available_data(ds)
         if available_sensor:
             fig_quench, ax_quench = plt.subplots(1, 2, figsize=(15, 5), gridspec_kw={'width_ratios': [3, 2]})
