@@ -25,6 +25,17 @@ dir = os.path.dirname(os.path.realpath(__file__))
 glidertest_style_file = f"{dir}/glidertest.mplstyle"
 
 
+def _show():
+    """
+    Call plt.show() while ignoring the warning raised by non-interactive backends (e.g. Agg).
+
+    'UserWarning: FigureCanvasAgg is non-interactive, and thus cannot be shown' is a common warning that turns up in other packages that use glidertest.
+
+    Potentially replaceable in the future, depending on `glidertest_style_file` intended usage.
+    """
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message=".*non-interactive, and thus cannot be shown", category=UserWarning)
+        plt.show()
 
 
 def plot_updown_bias(ds: xr.Dataset, var='TEMP', v_res=1, ax: plt.Axes = None, **kw: dict, ) -> tuple({plt.Figure, plt.Axes}):
@@ -83,7 +94,7 @@ def plot_updown_bias(ds: xr.Dataset, var='TEMP', v_res=1, ax: plt.Axes = None, *
         ax.set_ylabel(f'Depth (m)')
         ax.grid()
         if force_plot:
-            plt.show()
+            _show()
         return fig, ax
 
 
@@ -217,7 +228,7 @@ def plot_basic_vars(ds: xr.Dataset, v_res=1, start_prof=0, end_prof=-1, ax=None)
             [a.set_ylim(depthG.max(), 0) for a in ax]
             [a.grid() for a in ax]
             if force_plot:
-                plt.show()
+                _show()
     return fig, ax
 
 
@@ -303,7 +314,7 @@ def process_optics_assess(ds, var='CHLA'):
             xlabel='Measurements',
             ylabel=f'{utilities.plotting_labels(var)} ({utilities.plotting_units(ds, var)})'
         )
-        plt.show()
+        _show()
     percentage_change = (((slope * len(bottom_opt_data) + intercept) - intercept) / abs(intercept)) * 100
 
     if abs(percentage_change) >= 1:
@@ -367,7 +378,7 @@ def plot_daynight_avg(ds,var='PSAL', ax: plt.Axes = None, sel_day=None, **kw: di
         ax.set(xlabel=f'{utilities.plotting_labels(var)} ({utilities.plotting_units(ds,var)})', ylabel='Depth (m)')
         ax.set_title(sel_day)
         if force_plot:
-            plt.show()
+            _show()
     return fig, ax
 
 
@@ -456,7 +467,7 @@ def plot_quench_assess(ds: xr.Dataset, sel_var: str, ax: plt.Axes = None, start_
         utilities._time_axis_formatter(ax, ds_sel, format_x_axis=True)
     
         plt.colorbar(c, label=f'log₁₀({utilities.plotting_labels(sel_var)}) ({utilities.plotting_units(ds,sel_var)})')
-        plt.show()
+        _show()
     return fig, ax
 
 
@@ -533,7 +544,7 @@ def check_temporal_drift(ds: xr.Dataset, var: str, ax: plt.Axes = None, **kw: di
         if locator is not None and ticks:
             colorbar.set_ticks(ticks)
         if force_plot:
-            plt.show()
+            _show()
     return fig, ax
 
 
@@ -589,7 +600,7 @@ def plot_prof_monotony(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict, ) -> tup
         ax[1].xaxis.set_major_locator(plt.MaxNLocator(8))
         utilities._time_axis_formatter(ax[1], ds, format_x_axis=True)
         [a.grid() for a in ax]
-        plt.show()
+        _show()
     return fig, ax
 
 
@@ -692,7 +703,7 @@ def plot_glider_track(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict) -> tuple(
         gl = ax.gridlines(draw_labels=True, color='black', alpha=0.5, linestyle='--')
         gl.top_labels = False
         gl.right_labels = False
-        plt.show()
+        _show()
 
     return fig, ax
 
@@ -806,7 +817,7 @@ def plot_grid_spacing(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict) -> tuple(
             axes.tick_params(axis='both', which='major')
             # More subtle grid lines
             axes.grid(True, which='both', linestyle='--', linewidth=0.5, color='grey')
-        plt.show()
+        _show()
 
     return fig, ax
 
@@ -844,7 +855,7 @@ def plot_sampling_period_all(ds: xr.Dataset) -> tuple({plt.Figure, plt.Axes}):
     fig, ax = plt.subplots(1, count_vars, figsize=(5*count_vars, 6))
     for i in range(len(variables)):
         ax[i] = plot_sampling_period(ds, ax[i], variables[i])
-    plt.show()
+    _show()
 
     return fig, ax
 
@@ -1017,7 +1028,7 @@ def plot_ts(ds: xr.Dataset, percentile: list = [0.5,99.5], axs: plt.Axes = None,
             axes.tick_params(axis='both', which='major')
             axes.grid(True, which='both', linestyle='--', linewidth=0.5, color='grey')
         if force_plot:
-            plt.show()
+            _show()
         all_ax = axs
         return fig, all_ax
     
@@ -1177,7 +1188,7 @@ def plot_vertical_speeds_with_histograms(ds, start_prof=None, end_prof=None):
         box2_hist = ax2_hist.get_position()
         ax2_hist.set_position([box2_hist.x0 - shift_dist, box2_hist.y0, box2_hist.width + shift_dist, box2_hist.height])
 
-    plt.show()
+    _show()
 
     return fig, axs
 
@@ -1256,7 +1267,7 @@ def plot_combined_velocity_profiles(ds_out_dives: xr.Dataset, ds_out_climbs: xr.
         ax.spines['top'].set_visible(False)
         ax.tick_params(axis='both', which='major')
         ax.legend()
-        plt.show()
+        _show()
         return fig, ax
 
 
@@ -1319,7 +1330,7 @@ def plot_hysteresis(ds, var='DOXY', v_res=1, threshold=2, ax=None):
         [a.invert_yaxis() for a in ax]
         ax[0].set_ylabel('Depth (m)')
         ax[0].set_xlabel(f'{utilities.plotting_labels(var)} $=mean$ \n({utilities.plotting_units(ds, var)})')
-        ax[1].set_xlabel(f'Absolute difference = |$\Delta$| \n({ds[var].units})')
+        ax[1].set_xlabel(f'Absolute difference = |Δ| \n({ds[var].units})')
         ax[2].set_xlabel('Error [|Δ| / mean] (%)')
         ax[3].set_xlabel('Scaled error [|Δ| / range] (%)')
         for ax1 in ax[:-1]:
@@ -1331,7 +1342,7 @@ def plot_hysteresis(ds, var='DOXY', v_res=1, threshold=2, ax=None):
         ax[4].set(ylabel='Depth (m)', xlabel='Profile number')
         fig.suptitle(utilities.plotting_labels(var), y=.98)
         if force_plot:
-            plt.show()
+            _show()
     return fig, ax
 
 
@@ -1401,7 +1412,7 @@ def plot_outlier_duration(ds: xr.Dataset, rolling_mean: pd.Series, overtime, std
             if n % every_nth != 0:
                 label.set_visible(False)
         if force_plot:
-            plt.show()
+            _show()
     return fig, ax
 
 
@@ -1451,7 +1462,7 @@ def plot_global_range(ds, var='DOXY', min_val=-5, max_val=600, ax=None):
         ax.set_title('Global range check')
         ax.grid()
         if force_plot:
-            plt.show()
+            _show()
     return fig, ax
 
 
@@ -1527,7 +1538,7 @@ def plot_ioosqc(data, suspect_threshold=[25], fail_threshold=[50], title='', ax=
         ax.grid()
         ax.set_title(title)
         if force_plot:
-            plt.show()
+            _show()
     return fig, ax
 
 def plot_max_depth_per_profile(ds: xr.Dataset, bins= 20, ax = None, **kw: dict) -> tuple({plt.Figure, plt.Axes}):
@@ -1579,7 +1590,7 @@ def plot_max_depth_per_profile(ds: xr.Dataset, bins= 20, ax = None, **kw: dict) 
         ax[1].set_title('Histogram of max depth per profile')
         [a.grid() for a in ax]
         if force_plot:
-            plt.show()
+            _show()
     return fig, ax
 
 def plot_profile(ds: xr.Dataset, profile_num: int = None, vars: list = ['TEMP','PSAL','DENSITY'], use_bins: bool = False, binning: float = 2, ax=None):
