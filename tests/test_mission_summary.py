@@ -27,12 +27,12 @@ def test_docs():
         Path(example_dir).mkdir()
     summary_sheet.create_docfile(ds, example_dir)
     summary_sheet.rst_to_md(example_dir, 'summary')
-    summary_sheet.mission_report(ds, example_dir,type='General')
+    summary_sheet.mission_report(ds, example_dir,report_type='General')
     summary_sheet.template_docfile(ds, example_dir)
     summary_sheet.create_hyst_plots(ds, example_dir)
     summary_sheet.create_drift_plots(ds, example_dir)
     summary_sheet.create_optics_doc(ds, example_dir)
-    summary_sheet.mission_report(ds, example_dir, type='Optics')
+    summary_sheet.mission_report(ds, example_dir, report_type='Optics')
 
 def test_optics_func():
     ds = fetchers.load_sample_dataset()
