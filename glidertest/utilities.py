@@ -8,6 +8,8 @@ import gsw
 from matplotlib.dates import DateFormatter
 import matplotlib.dates as mdates
 import cmocean.cm as cmo
+import logging
+_log = logging.getLogger(__name__)
 
 
 
