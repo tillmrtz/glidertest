@@ -23,8 +23,39 @@ classifiers = [
   "Programming Language :: Python :: 3.14",
 ]
 dynamic = [
-  "dependencies",
   "version",
+]
+dependencies = [
+  "cartopy",
+  "cmocean",
+  "folium",
+  "gsw",
+  "h5netcdf",
+  "h5py",
+  "ioos-qc",
+  "ipython",
+  "ipywidgets",
+  "matplotlib",
+  "numpy",
+  "pandas",
+  "pooch",
+  "pypandoc",
+  "rstcloth",
+  "scipy",
+  "seaborn",
+  "sgp4>=2.14",
+  "skyfield",
+  "tqdm",
+  "xarray",
+]
+optional-dependencies.dev = [
+  "jupyterlab",
+  "nbconvert",
+  "nbsphinx",
+  "pytest",
+  "pytest-cov",
+  "sphinx<8.2",
+  "sphinx-rtd-theme",
 ]
 urls.documentation = "https://oceangliderscommunity.github.io/glidertest/"
 urls.homepage = "https://github.com/OceanGlidersCommunity/glidertest"
@@ -37,9 +68,6 @@ packages = [
 include-package-data = true
 
 [tool.setuptools.dynamic]
-dependencies = { file = [
-  "requirements.txt",
-] }
 readme = { file = "README.md", content-type = "text/markdown" }
 
 [tool.setuptools_scm]

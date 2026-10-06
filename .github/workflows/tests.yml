@@ -33,15 +33,11 @@ jobs:
         environment-name: TEST
         init-shell: bash
         create-args: >-
-          python=${{ matrix.python-version }} --file requirements-dev.txt --channel conda-forge
-
-    - name: Install rstcloth (PyPI-only)
-      run: |
-        micromamba run pip install rstcloth
+          python=${{ matrix.python-version }} pip pandoc --channel conda-forge
 
     - name: Install glidertest
       run: |
-        python -m pip install -e . --no-deps --force-reinstall
+        python -m pip install -e ".[dev]"
 
     - name: Full Tests
       run: |
