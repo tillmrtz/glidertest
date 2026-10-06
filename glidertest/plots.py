@@ -56,13 +56,14 @@ def _show():
         plt.show()
 
 
-def plot_updown_bias(ds: xr.Dataset, var='TEMP', v_res=1, ax: plt.Axes = None, **kw: dict, ) -> tuple({plt.Figure, plt.Axes}):
+def plot_updown_bias(ds: xr.Dataset, var='TEMP', v_res=1, ax: plt.Axes = None, **kw: dict, ) -> tuple(
+    {plt.Figure, plt.Axes}):
     """
     This function can be used to plot the up and downcast differences computed with the updown_bias function
-    
+
     Parameters
     ----------
-    ds: xarray.Dataset 
+    ds: xarray.Dataset
         Dataset in **OG1 format**, containing at least **TIME, DEPTH, LATITUDE, LONGITUDE,** and the selected variable.
         Data should not be gridded.
     var: str, optional, default='TEMP'
@@ -71,15 +72,15 @@ def plot_updown_bias(ds: xr.Dataset, var='TEMP', v_res=1, ax: plt.Axes = None, *
         Vertical resolution for the gridding
     ax: matplotlib.axes.Axes, default = None
         Axis to plot the data
-    **kw : dict, optional  
-    Additional keyword arguments passed to `matplotlib.pyplot.plot()`.  
+    **kw : dict, optional
+    Additional keyword arguments passed to `matplotlib.pyplot.plot()`.
 
     Returns
     -------
-    fig : matplotlib.figure.Figure  
-        Figure object containing the generated plot.  
-    ax : matplotlib.axes.Axes  
-        Axes object with the plotted **climb vs. dive differences** over depth. 
+    fig : matplotlib.figure.Figure
+        Figure object containing the generated plot.
+    ax : matplotlib.axes.Axes
+        Axes object with the plotted **climb vs. dive differences** over depth.
 
     Notes
     -----
@@ -88,8 +89,6 @@ def plot_updown_bias(ds: xr.Dataset, var='TEMP', v_res=1, ax: plt.Axes = None, *
     with plt.style.context(_style()):
         if ax is None:
             fig, ax = plt.subplots()
-            third_width = fig.get_size_inches()[0] / 3.11
-            fig.set_size_inches(third_width, third_width * 1.1)
             force_plot = True
         else:
             fig = plt.gcf()
@@ -108,7 +107,7 @@ def plot_updown_bias(ds: xr.Dataset, var='TEMP', v_res=1, ax: plt.Axes = None, *
             lims = np.abs(df.dc)
             ax.set_xlim(-np.nanpercentile(lims, 99.5), np.nanpercentile(lims, 99.5))
             ax.set_ylim(df.depth.max() + 1, -df.depth.max() / 30)
-        ax.set_xlabel(f'{utilities.plotting_labels(var)} ({utilities.plotting_units(ds,var)})')
+        ax.set_xlabel(f'{utilities.plotting_labels(var)} ({utilities.plotting_units(ds, var)})')
         ax.set_ylabel(f'Depth (m)')
         ax.grid()
         if force_plot:
@@ -118,32 +117,32 @@ def plot_updown_bias(ds: xr.Dataset, var='TEMP', v_res=1, ax: plt.Axes = None, *
 
 def plot_basic_vars(ds: xr.Dataset, v_res=1, start_prof=0, end_prof=-1, ax=None):
     """
-    This function plots the basic oceanographic variables temperature, salinity and density. A second plot is created and filled with oxygen and 
+    This function plots the basic oceanographic variables temperature, salinity and density. A second plot is created and filled with oxygen and
     chlorophyll data if available.
 
     Parameters
     ----------
 
-    ds: xarray 
+    ds: xarray
         Dataset in **OG1 format**, containing at least **PROFILE_NUMBER, DEPTH, TEMP, PSAL, LATITUDE, LONGITUDE,** and the selected variable.
     v_res: float, default = 1
         Vertical resolution for the gridding. Horizontal resolution (by profile) is assumed to be 1
     start_prof: int
         Start profile used to compute the means that will be plotted. This can vary in case the dataset spread over a large timescale
-        or region and subsections want to be plotted-1     
+        or region and subsections want to be plotted-1
     end_prof: int
         End profile used to compute the means that will be plotted. This can vary in case the dataset spread over a large timescale
-        or region and subsections want to be plotted-1          
-    **kw : dict, optional  
-        Additional keyword arguments passed to `matplotlib.pyplot.plot()`.  
+        or region and subsections want to be plotted-1
+    **kw : dict, optional
+        Additional keyword arguments passed to `matplotlib.pyplot.plot()`.
 
     Returns
     -------
-    fig : matplotlib.figure.Figure  
-        Figure object containing the generated plot.  
-    ax : matplotlib.axes.Axes  
-        Axes object with the plotted variables **temperature, salinity and density** over depth. 
-    
+    fig : matplotlib.figure.Figure
+        Figure object containing the generated plot.
+    ax : matplotlib.axes.Axes
+        Axes object with the plotted variables **temperature, salinity and density** over depth.
+
     Notes
     -----
     Original Author: Chiara Monforte
@@ -152,9 +151,9 @@ def plot_basic_vars(ds: xr.Dataset, v_res=1, start_prof=0, end_prof=-1, ax=None)
     ds = utilities._calc_teos10_variables(ds)
     p = 1
     z = v_res
-    tempG, profG, depthG = utilities.construct_2dgrid(ds.PROFILE_NUMBER, ds.DEPTH, ds.TEMP, p, z,x_bin_center=False)
-    salG, profG, depthG = utilities.construct_2dgrid(ds.PROFILE_NUMBER, ds.DEPTH, ds.PSAL, p, z,x_bin_center=False)
-    denG, profG, depthG = utilities.construct_2dgrid(ds.PROFILE_NUMBER, ds.DEPTH, ds.DENSITY, p, z,x_bin_center=False)
+    tempG, profG, depthG = utilities.construct_2dgrid(ds.PROFILE_NUMBER, ds.DEPTH, ds.TEMP, p, z, x_bin_center=False)
+    salG, profG, depthG = utilities.construct_2dgrid(ds.PROFILE_NUMBER, ds.DEPTH, ds.PSAL, p, z, x_bin_center=False)
+    denG, profG, depthG = utilities.construct_2dgrid(ds.PROFILE_NUMBER, ds.DEPTH, ds.DENSITY, p, z, x_bin_center=False)
 
     tempG = tempG[start_prof:end_prof, :]
     salG = salG[start_prof:end_prof, :]
@@ -172,8 +171,8 @@ def plot_basic_vars(ds: xr.Dataset, v_res=1, start_prof=0, end_prof=-1, ax=None)
                 force_plot = False
 
             # Resize to half-width
-            half_width = fig.get_size_inches()[0] / 2.07
-            fig.set_size_inches(half_width, half_width * 0.85)
+            # half_width = fig.get_size_inches()[0] / 2.07
+            # fig.set_size_inches(half_width, half_width * 0.85)
             ax1 = ax[0].twiny()
             ax2 = ax[0].twiny()
             ax2_1 = ax[1].twiny()
@@ -195,42 +194,39 @@ def plot_basic_vars(ds: xr.Dataset, v_res=1, start_prof=0, end_prof=-1, ax=None)
             ax[0].tick_params(axis='x', colors='blue')
             ax[0].xaxis.label.set_color('blue')
             ax1.spines['bottom'].set_color('blue')
-            new_font = ax[0].get_xticklabels()[0].get_fontsize()
             ax1.spines['bottom'].set_color('blue')
-            ax1.set_xlabel(f'{utilities.plotting_labels("PSAL")} ({utilities.plotting_units(ds, "PSAL")})',
-                           fontsize=int(new_font))
+            ax1.set_xlabel(f'{utilities.plotting_labels("PSAL")} ({utilities.plotting_units(ds, "PSAL")})')
             ax1.xaxis.label.set_color('red')
             ax1.spines['top'].set_color('red')
-            ax1.tick_params(axis='x', colors='red', labelsize=int(new_font))
-            ax2.set_xlabel(xlabel=f'{utilities.plotting_labels("DENSITY")} ({utilities.plotting_units(ds, "DENSITY")})',
-                           fontsize=int(new_font))
+            ax1.tick_params(axis='x', colors='red')
+            ax2.set_xlabel(xlabel=f'{utilities.plotting_labels("DENSITY")} ({utilities.plotting_units(ds, "DENSITY")})')
             ax2.xaxis.label.set_color('black')
             ax2.spines['top'].set_color('black')
-            ax2.tick_params(axis='x', colors='black', labelsize=int(new_font))
+            ax2.tick_params(axis='x', colors='black')
 
             # Add text annotation to the right, outside of the plot
             ax2.text(1.68, 1.25, f'Averaged profiles \n {start_prof}-{end_prof}', transform=ax2.transAxes,
-                     verticalalignment='center', horizontalalignment='center', rotation=0, fontsize=int(new_font),
+                     verticalalignment='center', horizontalalignment='center', rotation=0,
                      bbox=dict(facecolor='white', alpha=0.5))
 
             if 'CHLA' in ds.variables:
-                chlaG, profG, depthG = utilities.construct_2dgrid(ds.PROFILE_NUMBER, ds.DEPTH, ds.CHLA, p, z,x_bin_center=False)
+                chlaG, profG, depthG = utilities.construct_2dgrid(ds.PROFILE_NUMBER, ds.DEPTH, ds.CHLA, p, z,
+                                                                  x_bin_center=False)
                 chlaG = chlaG[start_prof:end_prof, :]
                 ax2_1.plot(np.nanmean(chlaG, axis=0), depthG[0, :], c='green')
-                ax2_1.set_xlabel(xlabel=f'{utilities.plotting_labels("CHLA")} ({utilities.plotting_units(ds, "CHLA")})',
-                                 fontsize=int(new_font))
+                ax2_1.set_xlabel(xlabel=f'{utilities.plotting_labels("CHLA")} ({utilities.plotting_units(ds, "CHLA")})')
                 ax2_1.xaxis.label.set_color('green')
                 ax2_1.spines['top'].set_color('green')
-                ax2_1.tick_params(axis='x', colors='green', labelsize=int(new_font))
+                ax2_1.tick_params(axis='x', colors='green')
                 plt.setp(ax2_1.get_yticklabels()[0], visible=False)
                 plt.setp(ax2_1.get_yticklabels()[-1], visible=False)
             else:
                 plt.setp(ax2_1.get_xticklabels(), visible=False)
-                ax[1].text(0.15, 0.6, 'Chlorophyll data \nunavailable', va='top', transform=ax[1].transAxes,
-                           fontsize=int(new_font))
+                ax[1].text(0.15, 0.6, 'Chlorophyll data \nunavailable', va='top', transform=ax[1].transAxes)
 
             if 'DOXY' in ds.variables:
-                oxyG, profG, depthG = utilities.construct_2dgrid(ds.PROFILE_NUMBER, ds.DEPTH, ds.DOXY, p, z,x_bin_center=False)
+                oxyG, profG, depthG = utilities.construct_2dgrid(ds.PROFILE_NUMBER, ds.DEPTH, ds.DOXY, p, z,
+                                                                 x_bin_center=False)
                 oxyG = oxyG[start_prof:end_prof, :]
                 ax[1].plot(np.nanmean(oxyG, axis=0), depthG[0, :], c='orange')
                 ax[1].set(xlabel=f'{utilities.plotting_labels("DOXY")} \n({utilities.plotting_units(ds, "DOXY")})')
@@ -240,8 +236,7 @@ def plot_basic_vars(ds: xr.Dataset, v_res=1, start_prof=0, end_prof=-1, ax=None)
                 ax[1].spines['bottom'].set_color('orange')
             else:
                 plt.setp(ax[1].get_xticklabels(), visible=False)
-                ax[1].text(0.2, 0.4, 'Oxygen data \nunavailable', va='top', transform=ax[1].transAxes,
-                           fontsize=int(new_font))
+                ax[1].text(0.2, 0.4, 'Oxygen data \nunavailable', va='top', transform=ax[1].transAxes)
 
             [a.set_ylim(depthG.max(), 0) for a in ax]
             [a.grid() for a in ax]
@@ -253,27 +248,27 @@ def plot_basic_vars(ds: xr.Dataset, v_res=1, start_prof=0, end_prof=-1, ax=None)
 def process_optics_assess(ds, var='CHLA'):
     """
     Function to assess visually any drift in deep optics data and the presence of any possible negative data. This function returns  both plots and text
-    
+
     Parameters
     ----------
     ds: xarray.Dataset
         Dataset in **OG1 format**, containing at least **TIME, DEPTH,** and the selected variable.
     var: str, optional, default='CHLA'
-        Selected variable        
-    
+        Selected variable
+
     Returns
     -------
     fig : matplotlib.figure.Figure
         Figure object containing the generated plot.
     ax : matplotlib.axes.Axes
         Axes object with the plotted data.
-    text_output : str  
+    text_output : str
         Text displaying where and when negative values are present in the dataset.
 
     Returns
     -------
     fig, ax : matplotlib.axes.Axes
-        Axes object with 
+        Axes object with
     text_output: str
         Text giving info on where and when negative data was observed
 
@@ -306,7 +301,7 @@ def process_optics_assess(ds, var='CHLA'):
         print(f"{var} data is missing for part of the mission")
     else:
         print(f"{var} data is present for the entire mission duration")
-    
+
     # Check bottom dark count and any drift there
     bottom_opt_data = ds[var].where(ds[var].DEPTH > ds.DEPTH.max() - (ds.DEPTH.max() * 0.1)).dropna(
         dim='N_MEASUREMENTS')
@@ -346,26 +341,26 @@ def process_optics_assess(ds, var='CHLA'):
     return fig, ax
 
 
-def plot_daynight_avg(ds,var='PSAL', ax: plt.Axes = None, sel_day=None, **kw: dict, ) -> tuple({plt.Figure, plt.Axes}):
+def plot_daynight_avg(ds, var='PSAL', ax: plt.Axes = None, sel_day=None, **kw: dict, ) -> tuple({plt.Figure, plt.Axes}):
     """
     This function can be used to plot the day and night averages computed with the day_night_avg function
-    
+
     Parameters
     ----------
     ds: xarray.Dataset
         Dataset in **OG1 format**, containing at least **TIME, DEPTH,** and the selected variable.
     var: str, optional, default='PSAL'
-        Selected variable  
+        Selected variable
     ax: matplotlib.axes.Axes, default = None
         Axis to plot the data
-    sel_day : str or None, optional, default = `None`  
+    sel_day : str or None, optional, default = `None`
         The specific day to plot. If `None`, the function selects the **median day** in the dataset.
-    
+
     Returns
     -------
-    fig : matplotlib.figure.Figure  
-        The generated **figure** containing the plot.  
-    ax : matplotlib.axes.Axes  
+    fig : matplotlib.figure.Figure
+        The generated **figure** containing the plot.
+    ax : matplotlib.axes.Axes
         The **axes** object with the plotted data.
 
     Notes
@@ -373,11 +368,11 @@ def plot_daynight_avg(ds,var='PSAL', ax: plt.Axes = None, sel_day=None, **kw: di
     Original Author: Chiara Monforte
 
     """
-    day, night = tools.compute_daynight_avg(ds, sel_var=var,start_time=sel_day,end_time=sel_day)
+    day, night = tools.compute_daynight_avg(ds, sel_var=var, start_time=sel_day, end_time=sel_day)
     if not sel_day:
         dates = list(day.date.dropna().values) + list(night.date.dropna().values)
         dates.sort()
-        sel_day = dates[int(len(dates)/2)]
+        sel_day = dates[int(len(dates) / 2)]
     with plt.style.context(_style()):
         if ax is None:
             fig, ax = plt.subplots()
@@ -393,7 +388,7 @@ def plot_daynight_avg(ds,var='PSAL', ax: plt.Axes = None, sel_day=None, **kw: di
         ax.legend()
         ax.invert_yaxis()
         ax.grid()
-        ax.set(xlabel=f'{utilities.plotting_labels(var)} ({utilities.plotting_units(ds,var)})', ylabel='Depth (m)')
+        ax.set(xlabel=f'{utilities.plotting_labels(var)} ({utilities.plotting_units(ds, var)})', ylabel='Depth (m)')
         ax.set_title(sel_day)
         if force_plot:
             _show()
@@ -401,38 +396,39 @@ def plot_daynight_avg(ds,var='PSAL', ax: plt.Axes = None, sel_day=None, **kw: di
 
 
 def plot_quench_assess(ds: xr.Dataset, sel_var: str, ax: plt.Axes = None, start_time=None,
-                           end_time=None,start_prof=None, end_prof=None, ylim=35, **kw: dict, ) -> tuple({plt.Figure, plt.Axes}):
+                       end_time=None, start_prof=None, end_prof=None, ylim=35, **kw: dict, ) -> tuple(
+    {plt.Figure, plt.Axes}):
     """
-    Generates a **section plot** of the selected variable over time and depth,  
-    with **sunrise and sunset** times marked to assess potential Non-Photochemical Quenching (NPQ) effects.  
+    Generates a **section plot** of the selected variable over time and depth,
+    with **sunrise and sunset** times marked to assess potential Non-Photochemical Quenching (NPQ) effects.
 
     Parameters
     ----------
-    ds : xarray.Dataset  
+    ds : xarray.Dataset
         Dataset in **OG1 format**, containing at least **TIME, DEPTH, LATITUDE, LONGITUDE**, and the selected variable.
-        Data **should not** be gridded.  
-    sel_var : str  
-        The selected variable to plot.  
-    ax : matplotlib.axes.Axes, optional, default = `None`  
-        Axis on which to plot the data. If `None`, a new figure and axis will be created.  
-    start_time : str or None, optional, default = `None`  
-        Start date for the data selection (`'YYYY-MM-DD'`).  
-        - If `None`, defaults to **2 days before** the dataset’s median date.  
-    end_time : str or None, optional, default = `None`  
-        End date** for the data selection (`'YYYY-MM-DD'`).  
-        - If `None`, defaults to **2 days after** the dataset’s median date.  
-    start_prof : int or None, optional, default = `None`  
+        Data **should not** be gridded.
+    sel_var : str
+        The selected variable to plot.
+    ax : matplotlib.axes.Axes, optional, default = `None`
+        Axis on which to plot the data. If `None`, a new figure and axis will be created.
+    start_time : str or None, optional, default = `None`
+        Start date for the data selection (`'YYYY-MM-DD'`).
+        - If `None`, defaults to **2 days before** the dataset’s median date.
+    end_time : str or None, optional, default = `None`
+        End date** for the data selection (`'YYYY-MM-DD'`).
+        - If `None`, defaults to **2 days after** the dataset’s median date.
+    start_prof : int or None, optional, default = `None`
         Start profile number for data selection
-    end_prof : int or None, optional, default = `None`  
-        End profile number for data selection 
-    ylim : float, optional, default = `35`  
-        Maximum depth limit for the y-axis. The **minimum limit** is automatically set as `ylim / 30`.  
-    
+    end_prof : int or None, optional, default = `None`
+        End profile number for data selection
+    ylim : float, optional, default = `35`
+        Maximum depth limit for the y-axis. The **minimum limit** is automatically set as `ylim / 30`.
+
     Returns
     -------
-    fig : matplotlib.figure.Figure  
-        The generated **figure** containing the plot.  
-    ax : matplotlib.axes.Axes  
+    fig : matplotlib.figure.Figure
+        The generated **figure** containing the plot.
+    ax : matplotlib.axes.Axes
         The **axes** object with the plotted data.
 
     Notes
@@ -443,8 +439,8 @@ def plot_quench_assess(ds: xr.Dataset, sel_var: str, ax: plt.Axes = None, start_
     with plt.style.context(_style()):
         if ax is None:
             fig, ax = plt.subplots()
-            full_width = fig.get_size_inches()[0] 
-            fig.set_size_inches(full_width, full_width * 0.5)
+            # full_width = fig.get_size_inches()[0]
+            # fig.set_size_inches(full_width, full_width * 0.5)
         else:
             fig = plt.gcf()
 
@@ -457,62 +453,61 @@ def plot_quench_assess(ds: xr.Dataset, sel_var: str, ax: plt.Axes = None, start_
             end_time = ds.TIME.mean() + np.timedelta64(2, 'D')
 
         if start_prof and end_prof:
-            t1 = ds.TIME.where(ds.PROFILE_NUMBER==start_prof).dropna(dim='N_MEASUREMENTS')[0]
-            t2 = ds.TIME.where(ds.PROFILE_NUMBER==end_prof).dropna(dim='N_MEASUREMENTS')[-1]
-            ds_sel = ds.sel(TIME=slice(t1,t2))
+            t1 = ds.TIME.where(ds.PROFILE_NUMBER == start_prof).dropna(dim='N_MEASUREMENTS')[0]
+            t2 = ds.TIME.where(ds.PROFILE_NUMBER == end_prof).dropna(dim='N_MEASUREMENTS')[-1]
+            ds_sel = ds.sel(TIME=slice(t1, t2))
         else:
             ds_sel = ds.sel(TIME=slice(start_time, end_time))
-
 
         if len(ds_sel.TIME) == 0:
             msg = f"supplied limits start_time: {start_time} end_time: {end_time} do not overlap with dataset TIME range {str(ds.TIME.values.min())[:10]} - {str(ds.TIME.values.max())[:10]}"
             raise ValueError(msg)
 
         sunrise, sunset = utilities.compute_sunset_sunrise(ds_sel.TIME, ds_sel.LATITUDE, ds_sel.LONGITUDE)
-        surf_chla= ds_sel[sel_var].where(ds_sel[sel_var].DEPTH < ylim).dropna(dim='N_MEASUREMENTS')
-        logchla=np.log10(surf_chla.where((surf_chla>0)).dropna(dim='N_MEASUREMENTS'))
+        surf_chla = ds_sel[sel_var].where(ds_sel[sel_var].DEPTH < ylim).dropna(dim='N_MEASUREMENTS')
+        logchla = np.log10(surf_chla.where((surf_chla > 0)).dropna(dim='N_MEASUREMENTS'))
         c = ax.scatter(logchla.TIME, logchla.DEPTH, c=logchla, s=10, vmin=np.nanpercentile(logchla, 0.5),
-                   vmax=np.nanpercentile(logchla, 99.5))
+                       vmax=np.nanpercentile(logchla, 99.5))
         ax.set_ylim(ylim, -ylim / 30)
         for n in np.unique(sunset):
             ax.axvline(np.unique(n), c='blue')
         for m in np.unique(sunrise):
             ax.axvline(np.unique(m), c='orange')
         ax.set_ylabel('Depth (m)')
-    
+
         # Set x-tick labels based on duration of the selection
         # Could pop out as a utility plotting function?
         utilities._time_axis_formatter(ax, ds_sel, format_x_axis=True)
-    
-        plt.colorbar(c, label=f'log₁₀({utilities.plotting_labels(sel_var)}) ({utilities.plotting_units(ds,sel_var)})')
+
+        plt.colorbar(c, label=f'log₁₀({utilities.plotting_labels(sel_var)}) ({utilities.plotting_units(ds, sel_var)})')
         _show()
     return fig, ax
 
 
 def check_temporal_drift(ds: xr.Dataset, var: str, ax: plt.Axes = None, **kw: dict, ) -> tuple({plt.Figure, plt.Axes}):
     """
-    Assesses potential **temporal drift** in a selected variable by generating a figure with two subplots:  
-    1. **Time series scatter plot** of the variable.  
+    Assesses potential **temporal drift** in a selected variable by generating a figure with two subplots:
+    1. **Time series scatter plot** of the variable.
     2. **Depth profile scatter plot**, colored by date.
-    
+
     Parameters
     ----------
-    ds : xarray.Dataset  
-        Dataset in **OG1 format**, containing at least **TIME, DEPTH,** and the selected variable.  
-        Data **should not be gridded**.  
-    var : str, optional  
+    ds : xarray.Dataset
+        Dataset in **OG1 format**, containing at least **TIME, DEPTH,** and the selected variable.
+        Data **should not be gridded**.
+    var : str, optional
         Selected variable to analyze.
-    ax : matplotlib.axes.Axes, optional  
-        Axis to plot the data. If None, a new figure and axis will be created.  
-    **kw : dict  
+    ax : matplotlib.axes.Axes, optional
+        Axis to plot the data. If None, a new figure and axis will be created.
+    **kw : dict
         Additional keyword arguments for customization.
-    
+
     Returns
     -------
-    fig : matplotlib.figure.Figure  
-        The generated figure.  
-    ax : matplotlib.axes.Axes  
-        Axes containing the plots. 
+    fig : matplotlib.figure.Figure
+        The generated figure.
+    ax : matplotlib.axes.Axes
+        Axes containing the plots.
 
     Notes
     -----
@@ -531,10 +526,12 @@ def check_temporal_drift(ds: xr.Dataset, var: str, ax: plt.Axes = None, **kw: di
         # Set x-tick labels based on duration of the selection
         utilities._time_axis_formatter(ax[0], ds, format_x_axis=True)
 
-        ax[0].set(ylim=(np.nanpercentile(ds[var], 0.01), np.nanpercentile(ds[var], 99.99)), ylabel=f'{utilities.plotting_labels(var)} ({utilities.plotting_units(ds,var)})')
+        ax[0].set(ylim=(np.nanpercentile(ds[var], 0.01), np.nanpercentile(ds[var], 99.99)),
+                  ylabel=f'{utilities.plotting_labels(var)} ({utilities.plotting_units(ds, var)})')
 
         c = ax[1].scatter(ds[var], ds.DEPTH, c=mdates.date2num(ds.TIME), s=10)
-        ax[1].set(xlim=(np.nanpercentile(ds[var], 0.01), np.nanpercentile(ds[var], 99.99)), ylabel='Depth (m)', xlabel=f'{utilities.plotting_labels(var)} ({utilities.plotting_units(ds,var)})')
+        ax[1].set(xlim=(np.nanpercentile(ds[var], 0.01), np.nanpercentile(ds[var], 99.99)), ylabel='Depth (m)',
+                  xlabel=f'{utilities.plotting_labels(var)} ({utilities.plotting_units(ds, var)})')
         ax[1].invert_yaxis()
         [a.grid() for a in ax]
 
@@ -552,7 +549,7 @@ def check_temporal_drift(ds: xr.Dataset, var: str, ax: plt.Axes = None, **kw: di
             color_max = color_array.max()
             ticks = [tick for tick in ticks if color_min <= tick <= color_max]
 
-            # ✅ Pass vmin/vmax to scatter!
+            # Pass vmin/vmax to scatter
             c.set_clim(vmin=min(ticks), vmax=max(ticks))
 
         # Now plot colorbar
@@ -567,25 +564,24 @@ def check_temporal_drift(ds: xr.Dataset, var: str, ax: plt.Axes = None, **kw: di
 
 
 def plot_prof_monotony(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict, ) -> tuple({plt.Figure, plt.Axes}):
-
     """
-    Checks for potential issues with the assigned **profile index** by plotting its progression over time.  
+    Checks for potential issues with the assigned **profile index** by plotting its progression over time.
 
     Parameters
     ----------
-    ds : xarray.Dataset  
-        Dataset in **OG1 format**, containing at least **TIME, DEPTH,** and **PROFILE_NUMBER**.  
-        Data **should not be gridded**.  
-    ax : matplotlib.axes.Axes, optional  
-        Axis to plot the data. If None, a new figure and axis will be created.  
-    **kw : dict  
-        Additional keyword arguments for customization. 
+    ds : xarray.Dataset
+        Dataset in **OG1 format**, containing at least **TIME, DEPTH,** and **PROFILE_NUMBER**.
+        Data **should not be gridded**.
+    ax : matplotlib.axes.Axes, optional
+        Axis to plot the data. If None, a new figure and axis will be created.
+    **kw : dict
+        Additional keyword arguments for customization.
 
-    Returns 
+    Returns
     -------
-    fig : matplotlib.figure.Figure  
-        The generated figure.  
-    ax : matplotlib.axes.Axes  
+    fig : matplotlib.figure.Figure
+        The generated figure.
+    ax : matplotlib.axes.Axes
         Axes containing the two plots.
         - 1. One line plot with the profile number over time (expected to be always increasing).
         - 2. Scatter plot showing at which depth over time there was a profile index where the
@@ -624,22 +620,22 @@ def plot_prof_monotony(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict, ) -> tup
 
 def plot_glider_track(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict) -> tuple({plt.Figure, plt.Axes}):
     """
-    Plots the **glider track** on a map, with latitude and longitude colored by time.  
+    Plots the **glider track** on a map, with latitude and longitude colored by time.
 
     Parameters
     ----------
-    ds : xarray.Dataset  
-        Dataset in **OG1 format**, containing at least **TIME, LATITUDE,** and **LONGITUDE**.  
-    ax : matplotlib.axes.Axes, optional  
-        Axis to plot the data. If None, a new figure and axis will be created.  
-    **kw : dict  
-        Additional keyword arguments for the scatter plot.  
+    ds : xarray.Dataset
+        Dataset in **OG1 format**, containing at least **TIME, LATITUDE,** and **LONGITUDE**.
+    ax : matplotlib.axes.Axes, optional
+        Axis to plot the data. If None, a new figure and axis will be created.
+    **kw : dict
+        Additional keyword arguments for the scatter plot.
 
     Returns
     -------
-    fig : matplotlib.figure.Figure  
-        The generated figure.  
-    ax : matplotlib.axes.Axes  
+    fig : matplotlib.figure.Figure
+        The generated figure.
+    ax : matplotlib.axes.Axes
         Axes containing the plot.
 
     Notes
@@ -676,7 +672,7 @@ def plot_glider_track(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict) -> tuple(
         # Get formatter and locator
         formatter, locator, _ = utilities._select_time_formatter_and_locator(ds)
 
-       # Precompute ticks BEFORE scatter plot
+        # Precompute ticks BEFORE scatter plot
         if locator is not None:
             vmin_dt = mdates.num2date(numeric_times.min())
             vmax_dt = mdates.num2date(numeric_times.max())
@@ -708,7 +704,8 @@ def plot_glider_track(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict) -> tuple(
         if locator is not None and ticks:
             cbar.set_ticks(ticks)
 
-        ax.set_extent([np.min(longitudes)-1, np.max(longitudes)+1, np.min(latitudes)-1, np.max(latitudes)+1], crs=ccrs.PlateCarree())
+        ax.set_extent([np.min(longitudes) - 1, np.max(longitudes) + 1, np.min(latitudes) - 1, np.max(latitudes) + 1],
+                      crs=ccrs.PlateCarree())
 
         # Add features to the map
         ax.add_feature(cfeature.LAND)
@@ -725,25 +722,26 @@ def plot_glider_track(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict) -> tuple(
 
     return fig, ax
 
+
 def plot_grid_spacing(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict) -> tuple({plt.Figure, plt.Axes}):
     """
-    Plots **histograms of the grid spacing**, showing depth and time differences while excluding the outer 1% of values.  
+    Plots **histograms of the grid spacing**, showing depth and time differences while excluding the outer 1% of values.
 
     Parameters
     ----------
-    ds : xarray.Dataset  
-        Dataset in **OG1 format**, containing at least **TIME** and **DEPTH**.  
-    ax : matplotlib.axes.Axes, optional  
-        Axis to plot the data. If None, a new figure and axis will be created.  
-    **kw : dict  
-        Additional keyword arguments for the histograms.  
+    ds : xarray.Dataset
+        Dataset in **OG1 format**, containing at least **TIME** and **DEPTH**.
+    ax : matplotlib.axes.Axes, optional
+        Axis to plot the data. If None, a new figure and axis will be created.
+    **kw : dict
+        Additional keyword arguments for the histograms.
 
     Returns
     -------
-    fig : matplotlib.figure.Figure  
-        The generated figure.  
-    ax : matplotlib.axes.Axes  
-        Axes containing the histograms. 
+    fig : matplotlib.figure.Figure
+        The generated figure.
+    ax : matplotlib.axes.Axes
+        Axes containing the histograms.
 
     Notes
     -----
@@ -753,12 +751,8 @@ def plot_grid_spacing(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict) -> tuple(
     with plt.style.context(_style()):
         if ax is None:
             fig, ax = plt.subplots(1, 2)
-            # Set aspect ration of plot to be 2:1
-            fig.set_size_inches(fig.get_size_inches()[0], fig.get_size_inches()[0] / 2)
         else:
             fig = plt.gcf()
-        # Set font sizes for all annotations
-        #def_font_size = 14
 
         # Calculate the depth and time differences
         depth_diff = np.diff(ds.DEPTH)
@@ -778,12 +772,14 @@ def plot_grid_spacing(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict) -> tuple(
         mean_time_diff = np.mean(orig_time_diff)
         max_time_diff = np.max(orig_time_diff)
         min_time_diff = np.min(orig_time_diff)
-        max_time_diff_hrs = max_time_diff/3600
+        max_time_diff_hrs = max_time_diff / 3600
 
         # Remove the top and bottom 0.5% of values to get a better histogram
         # This is hiding some data from the user
-        depth_diff = depth_diff[(depth_diff >= np.nanpercentile(depth_diff, 0.5)) & (depth_diff <= np.nanpercentile(depth_diff, 99.5))]
-        time_diff = time_diff[(time_diff >= np.nanpercentile(time_diff, 0.5)) & (time_diff <= np.nanpercentile(time_diff, 99.5))]
+        depth_diff = depth_diff[
+            (depth_diff >= np.nanpercentile(depth_diff, 0.5)) & (depth_diff <= np.nanpercentile(depth_diff, 99.5))]
+        time_diff = time_diff[
+            (time_diff >= np.nanpercentile(time_diff, 0.5)) & (time_diff <= np.nanpercentile(time_diff, 99.5))]
         print('Depth and time differences have been filtered to the middle 99% of values.')
         print('Numeric median/mean/max/min values are based on the original data.')
 
@@ -826,11 +822,8 @@ def plot_grid_spacing(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict) -> tuple(
         )
         ax[1].annotate(annotation_text, xy=(0.96, 0.96), xycoords='axes fraction'
                        , ha='right', va='top',
-                        bbox=dict(boxstyle='round,pad=0.3', edgecolor='black', facecolor='white', alpha=.5))
+                       bbox=dict(boxstyle='round,pad=0.3', edgecolor='black', facecolor='white', alpha=.5))
 
-        # Set font sizes for all annotations
-        # Font size 14 looks roughly like fontsize 8 when I drop this figure in Word - a bit small
-        # Font size 14 looks like fontsize 13 when I drop the top *half* of this figure in powerpoint - acceptable
         for axes in ax:
             axes.tick_params(axis='both', which='major')
             # More subtle grid lines
@@ -839,43 +832,47 @@ def plot_grid_spacing(ds: xr.Dataset, ax: plt.Axes = None, **kw: dict) -> tuple(
 
     return fig, ax
 
-def plot_sampling_period_all(ds: xr.Dataset) -> tuple({plt.Figure, plt.Axes}):
+
+def plot_sampling_period_all(ds: xr.Dataset, ax: plt.Axes = None) -> tuple({plt.Figure, plt.Axes}):
     """
-    Plots **histograms of the sampling period** for multiple variables.  
-    By default, it includes **TEMP** and **PSAL**, with **DOXY** and **CHLA** added if present in the dataset.  
+    Plots **histograms of the sampling period** for multiple variables.
+    By default, it includes **TEMP** and **PSAL**, with **DOXY** and **CHLA** added if present in the dataset.
 
     Parameters
     ----------
-    ds : xarray.Dataset  
-        Dataset in **OG1 format**.  
+    ds : xarray.Dataset
+        Dataset in **OG1 format**.
 
     Returns
     -------
-    fig : matplotlib.figure.Figure  
-        The generated figure.  
-    ax : matplotlib.axes.Axes  
+    fig : matplotlib.figure.Figure
+        The generated figure.
+    ax : matplotlib.axes.Axes
         Axes containing the histograms.
 
     Notes
     -----
     Original Author: Louis Clement
     """
-
-    count_vars=2
-    variables=['TEMP', 'PSAL']
-    if 'DOXY' in set(ds.variables): 
-        count_vars+=1
+    count_vars = 2
+    variables = ['TEMP', 'PSAL']
+    if 'DOXY' in set(ds.variables):
+        count_vars += 1
         variables.append('DOXY')
-    if 'CHLA' in set(ds.variables): 
-        count_vars+=1
+    if 'CHLA' in set(ds.variables):
+        count_vars += 1
         variables.append('CHLA')
+    with plt.style.context(glidertest_style_file):
+        if ax is None:
+            fig, ax = plt.subplots(1, count_vars)
+        else:
+            fig = plt.gcf()
 
-    fig, ax = plt.subplots(1, count_vars, figsize=(5*count_vars, 6))
     for i in range(len(variables)):
         ax[i] = plot_sampling_period(ds, ax[i], variables[i])
     _show()
-
     return fig, ax
+
 
 def plot_sampling_period(ds: xr.Dataset, ax: plt.Axes = None, variable='TEMP'):
     """
@@ -883,25 +880,28 @@ def plot_sampling_period(ds: xr.Dataset, ax: plt.Axes = None, variable='TEMP'):
 
     Parameters
     ----------
-    ds : xarray.Dataset  
-        Dataset in **OG1 format**.  
-    ax : matplotlib.axes.Axes, optional  
-        Axis to plot the data. If not provided, a new figure and axis are created.  
-    variable : str, default='TEMP'  
-        Variable for which the sampling period is displayed.  
+    ds : xarray.Dataset
+        Dataset in **OG1 format**.
+    ax : matplotlib.axes.Axes, optional
+        Axis to plot the data. If not provided, a new figure and axis are created.
+    variable : str, default='TEMP'
+        Variable for which the sampling period is displayed.
 
     Returns
     -------
-    ax : matplotlib.axes.Axes  
-        Axis containing the histogram. 
+    ax : matplotlib.axes.Axes
+        Axis containing the histogram.
 
     Notes
     -----
     Original Author: Louis Clement
     """
 
-    if ax is None:
-        fig, ax = plt.subplots(figsize=(5, 6))
+    with plt.style.context(glidertest_style_file):
+        if ax is None:
+            fig, ax = plt.subplots()
+        else:
+            fig = plt.gcf()
 
     nonan = ~np.isnan(ds[variable].values)
     time_diff = np.diff(ds.TIME.values[nonan]) / np.timedelta64(1, 's')  # Convert to seconds
@@ -910,21 +910,22 @@ def plot_sampling_period(ds: xr.Dataset, ax: plt.Axes = None, variable='TEMP'):
     mean_time_diff = np.mean(time_diff)
     max_time_diff = np.max(time_diff)
     min_time_diff = np.min(time_diff)
-    max_time_diff_hrs = max_time_diff/3600
+    max_time_diff_hrs = max_time_diff / 3600
 
     # Remove the top and bottom 0.5% of values to get a better histogram
     # This is hiding some data from the user
-    time_diff = time_diff[(time_diff >= np.nanpercentile(time_diff, 0.5)) & (time_diff <= np.nanpercentile(time_diff, 99.5))]
-    if variable=='TEMP': 
+    time_diff = time_diff[
+        (time_diff >= np.nanpercentile(time_diff, 0.5)) & (time_diff <= np.nanpercentile(time_diff, 99.5))]
+    if variable == 'TEMP':
         print('Depth and time differences have been filtered to the middle 99% of values.')
         print('Numeric median/mean/max/min values are based on the original data.')
 
     ax.hist(time_diff, bins=50)
     ax.set_xlabel('Time Spacing (s)')
-    if variable=='TEMP': ax.set_ylabel('Frequency')
-    ax.set_title('Histogram of Sampling Period' + '\n' + 
+    if variable == 'TEMP': ax.set_ylabel('Frequency')
+    ax.set_title('Histogram of Sampling Period' + '\n' +
                  'for ' + utilities.plotting_labels(variable) + ', \n' +
-                 'valid values: {:.1f}'.format(100*(np.sum(nonan)/ds.TIME.values.shape[0]))+'%')
+                 'valid values: {:.1f}'.format(100 * (np.sum(nonan) / ds.TIME.values.shape[0])) + '%')
 
     annotation_text = (
         f'Median: {median_time_diff:.2f} s\n'
@@ -933,39 +934,41 @@ def plot_sampling_period(ds: xr.Dataset, ax: plt.Axes = None, variable='TEMP'):
         f'Min: {min_time_diff:.2f} s'
     )
     ax.annotate(annotation_text, xy=(0.96, 0.96), xycoords='axes fraction'
-                    , ha='right', va='top',
-                    bbox=dict(boxstyle='round,pad=0.3', edgecolor='black', facecolor='white', alpha=.5))
+                , ha='right', va='top',
+                bbox=dict(boxstyle='round,pad=0.3', edgecolor='black', facecolor='white', alpha=.5))
 
     ax.tick_params(axis='both', which='major')
     ax.grid(True, which='both', linestyle='--', linewidth=0.5, color='grey')
 
     return ax
 
-def plot_ts(ds: xr.Dataset, percentile: list = [0.5,99.5], axs: plt.Axes = None, **kw: dict) -> tuple({plt.Figure, plt.Axes}):
+
+def plot_ts(ds: xr.Dataset, percentile: list = [0.5, 99.5], axs: plt.Axes = None, **kw: dict) -> tuple(
+    {plt.Figure, plt.Axes}):
     """
     Plots **temperature and salinity distributions** using histograms and a 2D density plot.
 
     Parameters
     ----------
-    ds : xarray.Dataset  
-        Dataset in **OG1 format**, containing at least **DEPTH, LONGITUDE, LATITUDE, TEMP and PSAL**. 
+    ds : xarray.Dataset
+        Dataset in **OG1 format**, containing at least **DEPTH, LONGITUDE, LATITUDE, TEMP and PSAL**.
     percentile : list, optional
         The percentiles to use for filtering the data. Default is [0.5, 99.5].
-    axs : matplotlib.axes.Axes, optional  
-        Axes to plot the data. If not provided, a new figure and axes are created.  
-    kw : dict, optional  
-        Additional keyword arguments for the histograms.  
+    axs : matplotlib.axes.Axes, optional
+        Axes to plot the data. If not provided, a new figure and axes are created.
+    kw : dict, optional
+        Additional keyword arguments for the histograms.
 
     Returns
     -------
-    fig : matplotlib.figure.Figure  
-        Figure containing the plots.  
-    axs : matplotlib.axes.Axes  
-        Axes containing the histograms.  
-        - **Three plots are created:**  
-            1. **Histogram of Conservative Temperature** (middle 99%)  
-            2. **Histogram of Absolute Salinity** (middle 99%)  
-            3. **2D Histogram of Salinity vs. Temperature** with density contours 
+    fig : matplotlib.figure.Figure
+        Figure containing the plots.
+    axs : matplotlib.axes.Axes
+        Axes containing the histograms.
+        - **Three plots are created:**
+            1. **Histogram of Conservative Temperature** (middle 99%)
+            2. **Histogram of Absolute Salinity** (middle 99%)
+            3. **2D Histogram of Salinity vs. Temperature** with density contours
 
     Notes
     -----
@@ -988,7 +991,8 @@ def plot_ts(ds: xr.Dataset, percentile: list = [0.5,99.5], axs: plt.Axes = None,
 
         # Create a mask once for valid data points
         mask = np.isfinite(ds.TEMP.values) & np.isfinite(ds.PSAL.values)
-        temp, sal, depth, long, lat = (ds[var].values[mask] for var in ['TEMP', 'PSAL', 'DEPTH', 'LONGITUDE', 'LATITUDE'])
+        temp, sal, depth, long, lat = (ds[var].values[mask] for var in
+                                       ['TEMP', 'PSAL', 'DEPTH', 'LONGITUDE', 'LATITUDE'])
 
         # Convert to Absolute Salinity (SA) and Conservative Temperature (CT)
         SA = gsw.SA_from_SP(sal, depth, long, lat)
@@ -1031,10 +1035,10 @@ def plot_ts(ds: xr.Dataset, percentile: list = [0.5,99.5], axs: plt.Axes = None,
         h = axs[1].hist2d(SA_filtered, CT_filtered, bins=num_bins, cmap='viridis', norm=mcolors.LogNorm(), **kw)
         axs[1].contour(xi, yi, zi, colors='black', alpha=0.5, linewidths=0.5)
         axs[1].clabel(axs[1].contour(xi, yi, zi, colors='black', alpha=0.5, linewidths=0.5), inline=True)
-        cbar = fig.colorbar(h[3], orientation='vertical',cax=axs[2])
+        cbar = fig.colorbar(h[3], orientation='vertical', cax=axs[2])
         cbar.set_label('Log Counts')
         axs[1].set_title('2D Histogram \n (Log Scale)')
-        #Resize axs[2] as colorbar
+        # Resize axs[2] as colorbar
         box2 = axs[2].get_position()
         axs[2].set_position([box2.x0, box2.y0, box2.width / 6, box2.height])
         # Set x-limits based on salinity plot and y-limits based on temperature plot
@@ -1042,14 +1046,15 @@ def plot_ts(ds: xr.Dataset, percentile: list = [0.5,99.5], axs: plt.Axes = None,
         axs[1].set_ylim(axs[0].get_ylim())
 
         # Set font sizes for all annotations
-        for axes in [axs[0],axs[1],axs[4]]:
+        for axes in [axs[0], axs[1], axs[4]]:
             axes.tick_params(axis='both', which='major')
             axes.grid(True, which='both', linestyle='--', linewidth=0.5, color='grey')
         if force_plot:
             _show()
         all_ax = axs
         return fig, all_ax
-    
+
+
 def plot_vertical_speeds_with_histograms(ds, start_prof=None, end_prof=None):
     """
     Plots vertical glider speeds with histograms for diagnostic purposes.
@@ -1065,34 +1070,35 @@ def plot_vertical_speeds_with_histograms(ds, start_prof=None, end_prof=None):
 
     Parameters
     ----------
-    ds : xarray.Dataset  
-        Dataset containing vertical speed data with required variables:  
-        - **VERT_GLIDER_SPEED**: Modeled glider speed  
-        - **VERT_SPEED_DZDT**: Computed glider speed from pressure sensor  
-        - **VERT_SW_SPEED**: Implied seawater velocity  
-    start_prof : int, optional  
-        Starting profile number for subsetting. Defaults to the **first profile number**.  
-    end_prof : int, optional  
-        Ending profile number for subsetting. Defaults to the **last profile number**.  
+    ds : xarray.Dataset
+        Dataset containing vertical speed data with required variables:
+        - **VERT_GLIDER_SPEED**: Modeled glider speed
+        - **VERT_SPEED_DZDT**: Computed glider speed from pressure sensor
+        - **VERT_SW_SPEED**: Implied seawater velocity
+    start_prof : int, optional
+        Starting profile number for subsetting. Defaults to the **first profile number**.
+    end_prof : int, optional
+        Ending profile number for subsetting. Defaults to the **last profile number**.
 
     Returns
     -------
-    fig : matplotlib.figure.Figure  
-        The figure containing the plots.  
-    axs : tuple(matplotlib.axes.Axes)  
+    fig : matplotlib.figure.Figure
+        The figure containing the plots.
+    axs : tuple(matplotlib.axes.Axes)
         The axes objects for the plots.
 
     Notes
     ------
     Original Author: Eleanor Frajka-Williams
     """
-    utilities._check_necessary_variables(ds, ['GLIDER_VERT_VELO_MODEL', 'GLIDER_VERT_VELO_DZDT', 'VERT_CURR_MODEL','PROFILE_NUMBER'])
+    utilities._check_necessary_variables(ds, ['GLIDER_VERT_VELO_MODEL', 'GLIDER_VERT_VELO_DZDT', 'VERT_CURR_MODEL',
+                                              'PROFILE_NUMBER'])
     with plt.style.context(_style()):
         if start_prof is None:
-            start_prof = int(ds['PROFILE_NUMBER'].values.mean())-10
+            start_prof = int(ds['PROFILE_NUMBER'].values.mean()) - 10
 
         if end_prof is None:
-            end_prof = int(ds['PROFILE_NUMBER'].values.mean())+10
+            end_prof = int(ds['PROFILE_NUMBER'].values.mean()) + 10
 
         ds = ds.where((ds['PROFILE_NUMBER'] >= start_prof) & (ds['PROFILE_NUMBER'] <= end_prof), drop=True)
         vert_curr = ds.VERT_CURR_MODEL.values * 100  # Convert to cm/s
@@ -1126,9 +1132,12 @@ def plot_vertical_speeds_with_histograms(ds, start_prof=None, end_prof=None):
 
         # Upper right subplot for histogram of vertical velocity
         ax1_hist = axs[0, 1]
-        ax1_hist.hist(vert_dzdt, bins=50, orientation='horizontal', alpha=0.5, color='blue', label=labels_dict['vert_dzdt'])
-        ax1_hist.hist(vert_model, bins=50, orientation='horizontal', alpha=0.5, color='red', label=labels_dict['vert_model'])
-        ax1_hist.hist(vert_curr, bins=50, orientation='horizontal', alpha=0.5, color='green', label=labels_dict['vert_curr'])
+        ax1_hist.hist(vert_dzdt, bins=50, orientation='horizontal', alpha=0.5, color='blue',
+                      label=labels_dict['vert_dzdt'])
+        ax1_hist.hist(vert_model, bins=50, orientation='horizontal', alpha=0.5, color='red',
+                      label=labels_dict['vert_model'])
+        ax1_hist.hist(vert_curr, bins=50, orientation='horizontal', alpha=0.5, color='green',
+                      label=labels_dict['vert_curr'])
         ax1_hist.set_xlabel('Frequency')
 
         # Determine the best location for the legend based on the y-axis limits and zero
@@ -1138,9 +1147,6 @@ def plot_vertical_speeds_with_histograms(ds, start_prof=None, end_prof=None):
             legend_loc = 'upper right'
         else:
             legend_loc = 'lower right'
-        plt.rcParams['legend.fontsize'] = 12
-        ax1_hist.legend(loc=legend_loc)
-        plt.rcParams['legend.fontsize'] = 15
         # Lower left subplot for vertical water speed
         ax2 = axs[1, 0]
         ax2.axhline(0, color='gray', linestyle='-', linewidth=0.5)  # Add zero horizontal line
@@ -1153,8 +1159,10 @@ def plot_vertical_speeds_with_histograms(ds, start_prof=None, end_prof=None):
 
         # Lower right subplot for histogram of vertical water speed
         ax2_hist = axs[1, 1]
-        ax2_hist.hist(vert_curr, bins=50, orientation='horizontal', alpha=0.5, color='green', label=labels_dict['vert_curr'])
-        ax2_hist.axhline(median_vert_sw_speed, color='red', linestyle='dashed', linewidth=1, label=f'Median: {median_vert_sw_speed:.2f} cm/s')
+        ax2_hist.hist(vert_curr, bins=50, orientation='horizontal', alpha=0.5, color='green',
+                      label=labels_dict['vert_curr'])
+        ax2_hist.axhline(median_vert_sw_speed, color='red', linestyle='dashed', linewidth=1,
+                         label=f'Median: {median_vert_sw_speed:.2f} cm/s')
         ax2_hist.set_xlabel('Frequency')
 
         # Determine the best location for the legend based on the y-axis limits and median
@@ -1198,8 +1206,8 @@ def plot_vertical_speeds_with_histograms(ds, start_prof=None, end_prof=None):
 
         # Find the distance between the right edge of the top left plot and the left edge of the top right plot
         box1_hist = ax1_hist.get_position()
-        distance =  box1_hist.x0 - (box1.x0 + box1.width)
-        shift_dist = distance/3 # Not sure this will always work; it may depend on the def_fault_size
+        distance = box1_hist.x0 - (box1.x0 + box1.width)
+        shift_dist = distance / 3  # Not sure this will always work; it may depend on the def_fault_size
         # Adjust the width of the top right plot to extend left by half the distance
         ax1_hist.set_position([box1_hist.x0 - shift_dist, box1_hist.y0, box1_hist.width + shift_dist, box1_hist.height])
         # Adjust the width of the bottom right plot to extend left by half the distance
@@ -1210,11 +1218,12 @@ def plot_vertical_speeds_with_histograms(ds, start_prof=None, end_prof=None):
 
     return fig, axs
 
+
 def plot_combined_velocity_profiles(ds_out_dives: xr.Dataset, ds_out_climbs: xr.Dataset):
     """
     Plots combined vertical velocity profiles for dives and climbs.
 
-    Replicates Fig 3 in Frajka-Williams et al. 2011, but using an updated dataset from Jim Bennett (2013), 
+    Replicates Fig 3 in Frajka-Williams et al. 2011, but using an updated dataset from Jim Bennett (2013),
     now in OG1 format as sg014_20040924T182454_delayed.nc.  Note that flight model parameters may differ from those in the paper.
 
     The function converts vertical velocities from m/s to cm/s, plots the mean vertical velocities and their ranges for both dives and climbs,
@@ -1228,7 +1237,7 @@ def plot_combined_velocity_profiles(ds_out_dives: xr.Dataset, ds_out_climbs: xr.
         - 'meanw': Mean vertical velocity (m/s)
         - 'w_lower': Lower bound of velocity range (m/s)
         - 'w_upper': Upper bound of velocity range (m/s)
-    
+
     ds_out_climbs : xarray.Dataset
         Dataset containing climb profiles with the same variables as `ds_out_dives`.
 
@@ -1236,7 +1245,7 @@ def plot_combined_velocity_profiles(ds_out_dives: xr.Dataset, ds_out_climbs: xr.
     -------
     fig : matplotlib.figure.Figure
         The figure object for the plot.
-    
+
     ax : matplotlib.axes._subplots.AxesSubplot
         The axes object for the plot.
 
@@ -1258,11 +1267,6 @@ def plot_combined_velocity_profiles(ds_out_dives: xr.Dataset, ds_out_climbs: xr.
     w_upper_climbs = ds_out_climbs.w_upper.values * conv_factor
     with plt.style.context(_style()):
         fig, ax = plt.subplots(1, 1)
-        # Resize to half-width
-        half_width = fig.get_size_inches()[0] / 2.07
-        fig.set_size_inches(half_width, half_width * 0.9)
-        ax.tick_params(axis='both', which='major')
-
         # Plot dives
         ax.fill_betweenx(zgrid_dives, w_lower_dives, w_upper_dives, color='black', alpha=0.3)
         ax.plot(meanw_dives, zgrid_dives, color='black', label='w$_{dive}$')
@@ -1276,7 +1280,7 @@ def plot_combined_velocity_profiles(ds_out_dives: xr.Dataset, ds_out_climbs: xr.
         ax.set_xlabel('Vertical Velocity w$_{sw}$ (cm s$^{-1}$)')
         ax.set_ylabel('Depth (m)')
         ax.set_ylim(top=0, bottom=1000)  # Set y-limit maximum to zero
-        #ax.set_title('Combined Vertical Velocity Profiles')
+        # ax.set_title('Combined Vertical Velocity Profiles')
 
         ax.set_xlim(-1, 1.5)
         ax.set_xticks([-1, -0.5, 0, 0.5, 1.0, 1.5])
@@ -1297,7 +1301,7 @@ def plot_hysteresis(ds, var='DOXY', v_res=1, threshold=2, ax=None):
     Parameters
     ----------
     ds : xarray.Dataset
-        Dataset in **OG1 format** containing at least **DEPTH, PROFILE_NUMBER** and the selected variable. 
+        Dataset in **OG1 format** containing at least **DEPTH, PROFILE_NUMBER** and the selected variable.
         Data should **not** be gridded.
     var : str, optional, default = 'DOXY'
         The variable to analyze for hysteresis effects
@@ -1319,17 +1323,19 @@ def plot_hysteresis(ds, var='DOXY', v_res=1, threshold=2, ax=None):
     -----
     Original Author: Chiara Monforte
     """
-    varG, profG, depthG = utilities.construct_2dgrid(ds.PROFILE_NUMBER, ds.DEPTH, ds[var], 1, v_res,x_bin_center=False)
+    varG, profG, depthG = utilities.construct_2dgrid(ds.PROFILE_NUMBER, ds.DEPTH, ds[var], 1, v_res, x_bin_center=False)
     df, diff, err_mean, err_range, rms = tools.compute_hyst_stat(ds, var=var, v_res=v_res)
     with plt.style.context(_style()):
         if ax is None:
             fig = plt.figure()
-            ax = [plt.subplot(4, 4, 1), plt.subplot(4, 4, 2), plt.subplot(4, 4, 3), plt.subplot(4, 4, 4), plt.subplot(4, 1, 2)]
+            ax = [plt.subplot(4, 4, 1), plt.subplot(4, 4, 2), plt.subplot(4, 4, 3), plt.subplot(4, 4, 4),
+                  plt.subplot(4, 1, 2)]
             force_plot = True
         else:
             if len(ax) == 1:
                 fig = plt.gcf()
-                ax = [plt.subplot(4, 4, 1), plt.subplot(4, 4, 2), plt.subplot(4, 4, 3), plt.subplot(4, 4, 4), plt.subplot(4, 1, 2)]
+                ax = [plt.subplot(4, 4, 1), plt.subplot(4, 4, 2), plt.subplot(4, 4, 3), plt.subplot(4, 4, 4),
+                      plt.subplot(4, 1, 2)]
                 force_plot = False
             else:
                 fig = plt.gcf()
@@ -1375,12 +1381,12 @@ def plot_outlier_duration(ds: xr.Dataset, rolling_mean: pd.Series, overtime, std
     ds : xarray.Dataset
         Dataset containing at least **TIME, DEPTH, and PROFILE_NUMBER**
     rolling_mean : pandas.Series
-        A series representing the rolling mean of profile durations, used to 
+        A series representing the rolling mean of profile durations, used to
         define the range of normal durations.
     overtime : list
         A list of profile numbers identified as outliers based on abnormal durations.
     std : float, default = 2
-        The number of standard deviations around the rolling mean used to classify 
+        The number of standard deviations around the rolling mean used to classify
         outliers.
     ax : matplotlib.axes.Axes, default = None
         Axes object for plotting. If None, a new figure with two subplots is created.
@@ -1398,7 +1404,7 @@ def plot_outlier_duration(ds: xr.Dataset, rolling_mean: pd.Series, overtime, std
     """
     with plt.style.context(_style()):
         if ax is None:
-            fig,ax = plt.subplots(1,2)
+            fig, ax = plt.subplots(1, 2)
             force_plot = True
         else:
             fig = plt.gcf()
@@ -1436,9 +1442,9 @@ def plot_outlier_duration(ds: xr.Dataset, rolling_mean: pd.Series, overtime, std
 
 def plot_global_range(ds, var='DOXY', min_val=-5, max_val=600, ax=None):
     """
-    This function creates a histogram of the selected variable (`var`) from the dataset (`ds`), 
-    allowing for visual inspection of its distribution. It overlays vertical lines at the specified 
-    minimum (`min_val`) and maximum (`max_val`) values to indicate the global range, helping 
+    This function creates a histogram of the selected variable (`var`) from the dataset (`ds`),
+    allowing for visual inspection of its distribution. It overlays vertical lines at the specified
+    minimum (`min_val`) and maximum (`max_val`) values to indicate the global range, helping
     identify whether values fall within expected limits.
 
     Parameters
@@ -1460,7 +1466,7 @@ def plot_global_range(ds, var='DOXY', min_val=-5, max_val=600, ax=None):
         The figure object containing the histogram plot.
     ax : matplotlib.axes.Axes
         The axes object containing the histogram plot.
-        
+
     Notes
     -----
     Original Author: Chiara Monforte
@@ -1476,7 +1482,7 @@ def plot_global_range(ds, var='DOXY', min_val=-5, max_val=600, ax=None):
         ax.hist(ds[var], bins=50)
         ax.axvline(min_val, c='r')
         ax.axvline(max_val, c='r')
-        ax.set(xlabel=f'{utilities.plotting_labels(var)} ({utilities.plotting_units(ds,var)})', ylabel='Frequency')
+        ax.set(xlabel=f'{utilities.plotting_labels(var)} ({utilities.plotting_units(ds, var)})', ylabel='Frequency')
         ax.set_title('Global range check')
         ax.grid()
         if force_plot:
@@ -1486,9 +1492,9 @@ def plot_global_range(ds, var='DOXY', min_val=-5, max_val=600, ax=None):
 
 def plot_ioosqc(data, suspect_threshold=[25], fail_threshold=[50], title='', ax=None):
     """
-    This function generates a scatter plot of the results from an IOOS QC test, labeling data points 
-    with quality control categories ('GOOD', 'UNKNOWN', 'SUSPECT', 'FAIL', 'MISSING'). It also overlays 
-    threshold-based markers to visualize suspect and fail ranges, aiding in the interpretation of 
+    This function generates a scatter plot of the results from an IOOS QC test, labeling data points
+    with quality control categories ('GOOD', 'UNKNOWN', 'SUSPECT', 'FAIL', 'MISSING'). It also overlays
+    threshold-based markers to visualize suspect and fail ranges, aiding in the interpretation of
     data quality.
 
     Parameters
@@ -1543,14 +1549,15 @@ def plot_ioosqc(data, suspect_threshold=[25], fail_threshold=[50], title='', ax=
         else:
             a_2[1] = f'x<{suspect_threshold[0]}'
         if len(fail_threshold) > 1:
-            a_2[3] = f'{suspect_threshold[1]}<x<{fail_threshold[1]} &\n {fail_threshold[0]}<x<{suspect_threshold[0].values}'
+            a_2[
+                3] = f'{suspect_threshold[1]}<x<{fail_threshold[1]} &\n {fail_threshold[0]}<x<{suspect_threshold[0].values}'
             a_2[4] = f'x<{fail_threshold[0]} or \nx>{fail_threshold[1]}'
         else:
             a_2[3] = f'x>{suspect_threshold[0]} and \nx<{fail_threshold[0]}'
             a_2[4] = f'x>{fail_threshold[0]}'
         a_2[9] = 'Nan'
 
-        ax2.set_yticklabels(a_2, fontsize=12)
+        ax2.set_yticklabels(a_2)
 
         ax.set_xlabel('Data index')
         ax.grid()
@@ -1559,14 +1566,15 @@ def plot_ioosqc(data, suspect_threshold=[25], fail_threshold=[50], title='', ax=
             _show()
     return fig, ax
 
-def plot_max_depth_per_profile(ds: xr.Dataset, bins= 20, ax = None, **kw: dict) -> tuple({plt.Figure, plt.Axes}):
+
+def plot_max_depth_per_profile(ds: xr.Dataset, bins=20, ax=None, **kw: dict) -> tuple({plt.Figure, plt.Axes}):
     """
     Plots the maximum depth of each profile in a dataset.
 
-    This function generates two plots: one showing the maximum depth of each profile and another 
-    histogram illustrating the distribution of maximum depths. It provides a visual representation 
+    This function generates two plots: one showing the maximum depth of each profile and another
+    histogram illustrating the distribution of maximum depths. It provides a visual representation
     of profile depth variations.
-        
+
     Parameters
     ----------
     ds : xarray.Dataset
@@ -1591,14 +1599,14 @@ def plot_max_depth_per_profile(ds: xr.Dataset, bins= 20, ax = None, **kw: dict) 
     """
     max_depths = tools.max_depth_per_profile(ds)
     with plt.style.context(_style()):
-        if ax is None:  
-            fig, ax = plt.subplots(1, 2)  
+        if ax is None:
+            fig, ax = plt.subplots(1, 2)
             force_plot = True
         else:
             fig = plt.gcf()
             force_plot = False
-            
-        ax[0].plot(max_depths.PROFILE_NUMBER, max_depths,**kw)
+
+        ax[0].plot(max_depths.PROFILE_NUMBER, max_depths, **kw)
         ax[0].set_xlabel('Profile number')
         ax[0].set_ylabel(f'Max depth ({max_depths.units})')
         ax[0].set_title('Max depth per profile')
@@ -1611,7 +1619,9 @@ def plot_max_depth_per_profile(ds: xr.Dataset, bins= 20, ax = None, **kw: dict) 
             _show()
     return fig, ax
 
-def plot_profile(ds: xr.Dataset, profile_num: int = None, vars: list = ['TEMP','PSAL','DENSITY'], use_bins: bool = False, binning: float = 2, ax=None):
+
+def plot_profile(ds: xr.Dataset, profile_num: int = None, vars: list = ['TEMP', 'PSAL', 'DENSITY'],
+                 use_bins: bool = False, binning: float = 2, ax=None):
     """
     Plots the specified variables against depth for a given profile number from an OG1-format dataset.
     If no profile number is provided, it plots the mean profile for the specified variables.
@@ -1653,14 +1663,14 @@ def plot_profile(ds: xr.Dataset, profile_num: int = None, vars: list = ['TEMP','
         raise ValueError("Only three variables can be plotted at once, chose fewer variables")
 
     with plt.style.context(_style()):
-        if ax is None:  
-            fig, ax1 = plt.subplots(figsize=(12, 9))   
+        if ax is None:
+            fig, ax1 = plt.subplots(figsize=(12, 9))
             force_plot = True
         else:
             fig = plt.gcf()
             force_plot = False
             ax1 = ax  # Use the first axis if provided
-        
+
         axs = [ax1, ax1.twiny(), ax1.twiny()]
         colors = ['red', 'blue', 'grey']
         s = 10 + binning
@@ -1690,18 +1700,20 @@ def plot_profile(ds: xr.Dataset, profile_num: int = None, vars: list = ['TEMP','
             label = utilities.plotting_labels(var)
             ax.plot(profile[var], profile['DEPTH'], color=colors[i], label=label)
             ax.scatter(profile[var], profile['DEPTH'], color=colors[i], marker='o', s=s)
-            ax.set_xlabel(f'{label} [{unit}]', color=colors[i])
+            ax.set_xlabel(f'{label} ({unit})', color=colors[i])
             ax.tick_params(axis='x', colors=colors[i])
             ax.spines['top'].set_visible(False)
             if i > 0:
                 ax.xaxis.set_ticks_position('bottom')
-                ax.spines['bottom'].set_position(('axes', -0.09*i))
-            ax.xaxis.set_label_coords(0.5, -0.05-0.105*i)
+                ax.spines['bottom'].set_position(('axes', -0.09 * i))
+            ax.xaxis.set_label_coords(0.5, -0.05 - 0.105 * i)
 
         ax1.grid(True)
         ax1.set_ylabel('Depth (m)')
         ax1.invert_yaxis()
         ax1.set_title(f'{title_str} ({glider} on mission: {mission})')
+        if force_plot:
+            _show()
 
     return fig, ax1
 
@@ -1747,22 +1759,23 @@ def plot_CR(ds: xr.Dataset, profile_num: int, use_bins: bool = False, binning: f
     CR = CR_df['CR'].values
 
     with plt.style.context(_style()):
-        if ax is None:  
-            fig, ax = plt.subplots(figsize=(12, 9))   
+        if ax is None:
+            fig, ax = plt.subplots(figsize=(12, 9))
             force_plot = True
         else:
             fig = plt.gcf()
             force_plot = False
 
         ax.plot(CR, depth, label='CR')
-        ax.scatter(CR, depth, marker='o', s=10+binning)
+        ax.scatter(CR, depth, marker='o', s=10 + binning)
         ax.set_xlabel('Convective Resistance (CR)')
         ax.set_ylabel('Depth (m)')
         ax.invert_yaxis()
         ax.set_title(f'Profile {profile_num} (Convective Resistance)')
         ax.grid(True)
         ax.legend()
-    
+    if force_plot:
+        _show()
     return fig, ax
 
 
@@ -1774,29 +1787,29 @@ def get_color_limits(values, log_scale=False):
 
         if finite.size == 0:
             raise ValueError("No positive values available for LogNorm.")
-        
+
         if finite.size < values.size:
             print("Warning: Some non-positive values will be ignored in log scale.")
 
-    return (np.nanpercentile(finite, 0.5),np.nanpercentile(finite, 99.5),)
+    return (np.nanpercentile(finite, 0.5), np.nanpercentile(finite, 99.5),)
 
 
 def get_contour_levels(levels=None, log_scale=False, vmin=None, vmax=None):
     # If the user passed an explicit array/list of levels, use it directly
     if levels is not None and not isinstance(levels, (int, float)):
         return levels
-        
+
     # If levels is an integer or None, use it as the target number of intervals
     num = levels if isinstance(levels, (int, float)) else 10
 
     if log_scale:
         # Find clean decade limits that encompass vmin and vmax
-        dec_min, dec_max  = np.floor(np.log10(vmin)), np.ceil(np.log10(vmax))
-        
+        dec_min, dec_max = np.floor(np.log10(vmin)), np.ceil(np.log10(vmax))
+
         # LogLocator naturally picks clean base-10 steps (e.g., 10^-5, 10^-4...)
-        locator = LogLocator(base=10, numticks=2*num, subs='auto')
-        levels = locator.tick_values(10**dec_min, 10**dec_max)
-        
+        locator = LogLocator(base=10, numticks=2 * num, subs='auto')
+        levels = locator.tick_values(10 ** dec_min, 10 ** dec_max)
+
         # Filter levels to strictly fall within your desired vmin/vmax range
         levels = levels[(levels >= vmin) & (levels <= vmax)]
         # If not enough levels are found, fallback to geometric spacing
@@ -1804,16 +1817,17 @@ def get_contour_levels(levels=None, log_scale=False, vmin=None, vmax=None):
             levels = np.geomspace(vmin, vmax, num)
     else:
         # MaxNLocator finds clean intervals (multiples of 1, 2, 5, 10)
-        locator = MaxNLocator(nbins=2*num, steps=[1, 2, 5, 10])
+        locator = MaxNLocator(nbins=2 * num, steps=[1, 2, 5, 10])
         levels = locator.tick_values(vmin, vmax)
-        
+
         # Filter and append strict boundary limits
         levels = levels[(levels >= vmin) & (levels <= vmax)]
 
     return levels
 
 
-def plot_section(ds, var, v_res=2, start=None, end=None, show_time_axis=True, method="pcolormesh", log_scale=False, ax = None, **kw,):
+def plot_section(ds, var, v_res=2, start=None, end=None, show_time_axis=True, method="pcolormesh", log_scale=False,
+                 ax=None, **kw, ):
     """
     Plots a section of the specified variable from the dataset `ds` against depth and profile number.
 
@@ -1903,9 +1917,11 @@ def plot_section(ds, var, v_res=2, start=None, end=None, show_time_axis=True, me
         # --- Handle provided axes ---
         if ax is not None:
             fig = ax.get_figure()
+            force_plot = True
         else:
             # Create new figure and axes if none provided
             fig, ax = plt.subplots(figsize=(15, 5))
+            force_plot = True
 
         if not kw.get("cmap"):
             kw["cmap"] = utilities.plotting_colormap(var)
@@ -1914,13 +1930,13 @@ def plot_section(ds, var, v_res=2, start=None, end=None, show_time_axis=True, me
 
         if method == "contourf":
             levels = get_contour_levels(levels=levels, log_scale=log_scale, vmin=kw["vmin"], vmax=kw["vmax"])
-            mappable = ax.contourf(X,Y,Z,**kw,levels=levels, extend="both")
+            mappable = ax.contourf(X, Y, Z, **kw, levels=levels, extend="both")
 
         elif method == "pcolormesh":
             if kw.get("norm"):
                 kw.pop("vmin", None)
                 kw.pop("vmax", None)
-            mappable = ax.pcolormesh(X,Y,Z,**kw)
+            mappable = ax.pcolormesh(X, Y, Z, **kw)
 
         else:
             raise ValueError(f"Unknown method '{method}'")
@@ -1940,8 +1956,8 @@ def plot_section(ds, var, v_res=2, start=None, end=None, show_time_axis=True, me
         # -------------------------
         # colorbar
         # -------------------------
-        cbar = plt.colorbar(mappable, ax=ax, spacing="proportional",extend="both")
-        cbar.set_label(f"{label} [{unit}]")
+        cbar = plt.colorbar(mappable, ax=ax, spacing="proportional", extend="both")
+        cbar.set_label(f"{label} ({unit})")
         if log_scale:
             cbar.ax.set_yscale('log')
 
@@ -1960,11 +1976,11 @@ def plot_section(ds, var, v_res=2, start=None, end=None, show_time_axis=True, me
             t = mdates.date2num(pd.to_datetime(mean_times))
             p = mean_times.index.values
 
-            to_time = interp1d(p,t,bounds_error=False,fill_value="extrapolate",)
+            to_time = interp1d(p, t, bounds_error=False, fill_value="extrapolate", )
 
-            to_profile = interp1d(t,p,bounds_error=False,fill_value="extrapolate",)
+            to_profile = interp1d(t, p, bounds_error=False, fill_value="extrapolate", )
 
-            time_ax = ax.secondary_xaxis("bottom",functions=(to_time, to_profile),)
+            time_ax = ax.secondary_xaxis("bottom", functions=(to_time, to_profile), )
 
             time_ax.spines["bottom"].set_position(("outward", 40))
 
@@ -1975,6 +1991,8 @@ def plot_section(ds, var, v_res=2, start=None, end=None, show_time_axis=True, me
             time_ax.xaxis.set_major_formatter(mdates.DateFormatter(fmt))
 
             time_ax.tick_params(rotation=35)
+    if force_plot:
+        _show()
+    return fig, ax, cbar, time_ax
 
-    return ax, cbar, time_ax
 
