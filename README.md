@@ -45,8 +45,7 @@ To install a local, development version of glidertest, clone the repo, open a te
 ```sh
 git clone https://github.com/OceanGlidersCommunity/glidertest.git
 cd glidertest
-pip install -r requirements-dev.txt
-pip install -e . 
+pip install -e ".[dev]"
 ```
 This installs glidertest locally. -e ensures that any edits you make in the files will be picked up by scripts that import functions from glidertest.
 
