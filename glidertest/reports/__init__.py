@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
     from ._mission import Page
 
-__all__ = ["navigator", "report"]
+__all__ = ["navigator", "report", "resolve_mission_id"]
 
 #: Masthead nav rows, in order: (``Page.nav_group`` key, row label). The inventory group is a
 #: separate strip, not a row. Built in the planned shared-design-system shape
@@ -54,21 +54,60 @@ def _build_nav(pages: list[Page], current: Page, source_name: str, *, back: bool
     return {"rows": rows, "back": back_pill, "inventory": inventory}
 
 
-def report(ds: xr.Dataset, outdir: Path | str, *, navigator: bool = True) -> Path:
+def resolve_mission_id(ds: xr.Dataset | None, mission_id: str | None = None) -> str:
+    """Return the sanitised mission directory name: *mission_id* if given, else derived from *ds*.
+
+    The single source for turning a dataset (and an optional caller override) into the subdirectory
+    name used under a report root, shared by :func:`report` and the command-line interface so the
+    two cannot disagree about where a mission is written. With *mission_id* the override is sanitised
+    (path separators neutralised); *ds* is not read. Otherwise the name is the OG1 ``id`` attribute,
+    else the source file stem (see :func:`glidertest.reports._mission.mission_id`).
+
+    Parameters
+    ----------
+    ds : xarray.Dataset or None
+        The dataset to derive the name from; may be None only when *mission_id* is given.
+    mission_id : str, optional
+        An explicit name to use instead of the derived one.
+
+    Returns
+    -------
+    str
+        The sanitised mission directory name.
+    """
+    from ._mission import _safe_dirname
+    from ._mission import mission_id as _derive
+
+    return _safe_dirname(mission_id) if mission_id else _derive(ds)
+
+
+def report(
+    ds: xr.Dataset,
+    outdir: Path | str,
+    *,
+    navigator: bool = True,
+    mission_id: str | None = None,
+    layout: str = "root",
+) -> Path:
     """Write a self-contained HTML report for *ds* under *outdir* and return the landing page path.
 
-    *outdir* is treated as a **root**: the report is written into ``<outdir>/<mission_id>/`` (created
-    if absent), never directly into *outdir*, so a root can hold many missions side by side. The
-    ``mission_id`` is the OG1 ``id`` attribute when present, else the source file stem (see
-    :func:`glidertest.reports._mission.mission_id`). Each applicable page in
-    :data:`glidertest.reports._mission.PAGES` is written to ``<mission_id>/<page>.html``; the pages
-    share one ``figures/`` with page-prefixed slugs (``<page>_<panel>.png``) and a cross-page nav. A
+    With *layout* ``"root"`` (the default) *outdir* is treated as a **root**: the report is written
+    into ``<outdir>/<mission_id>/`` (created if absent), so a root can hold many missions side by
+    side. With *layout* ``"flat"`` the pages are written directly into *outdir* and no navigator is
+    built (*navigator* is ignored) — one mission, one self-contained folder.
+
+    The ``mission_id`` subdirectory name is the OG1 ``id`` attribute when present, else the source
+    file stem (see :func:`glidertest.reports._mission.mission_id`); pass *mission_id* to override it
+    (run through the same directory-name sanitising). Each applicable page in
+    :data:`glidertest.reports._mission.PAGES` is written to ``<page>.html``; the pages share one
+    ``figures/`` with page-prefixed slugs (``<page>_<panel>.png``) and a cross-page nav. A
     machine-readable ``report.json`` manifest is written beside the landing page.
 
-    With *navigator* ``True`` (the default), ``<outdir>/index.html`` — a fleet navigator over every
-    ``<outdir>/*/report.json`` — is rebuilt after the mission is written (see :func:`navigator`). The
-    rebuild redraws the fleet track map, so for a **batch** pass ``navigator=False`` in the loop and
-    call :func:`navigator` once at the end rather than rebuilding on every mission.
+    With *navigator* ``True`` (the default, root layout only), ``<outdir>/index.html`` — a fleet
+    navigator over every ``<outdir>/*/report.json`` — is rebuilt after the mission is written (see
+    :func:`navigator`). The rebuild redraws the fleet track map, so for a **batch** pass
+    ``navigator=False`` in the loop and call :func:`navigator` once at the end rather than rebuilding
+    on every mission.
 
     Figures are rendered under the non-interactive ``Agg`` backend for the duration of the build,
     then the caller's backend is restored. glidertest's plotters call ``plt.show()`` when they draw
@@ -80,28 +119,51 @@ def report(ds: xr.Dataset, outdir: Path | str, *, navigator: bool = True) -> Pat
     ds : xarray.Dataset
         An OG1 glider dataset.
     outdir : pathlib.Path or str
-        The root directory; the mission subdirectory is created under it.
+        The root directory (``layout="root"``) or the mission's own directory (``layout="flat"``).
     navigator : bool, default True
-        Rebuild ``<outdir>/index.html`` (the fleet navigator) after writing the mission.
+        Rebuild ``<outdir>/index.html`` (the fleet navigator) after writing the mission. Ignored
+        when ``layout="flat"``.
+    mission_id : str, optional
+        Subdirectory name for this mission, overriding the name derived from *ds*; run through the
+        same sanitising as the derived name. Must not be combined with ``layout="flat"`` (there is
+        no subdirectory to name) — doing so raises :class:`ValueError`.
+    layout : {"root", "flat"}, default "root"
+        ``"root"`` writes the mission into ``<outdir>/<mission_id>/``; ``"flat"`` writes the pages
+        directly into *outdir* and builds no navigator.
 
     Returns
     -------
     pathlib.Path
-        The path to the written landing page (``<outdir>/<mission_id>/index.html``).
+        The path to the written landing page (``<outdir>/<mission_id>/index.html`` for root layout,
+        ``<outdir>/index.html`` for flat).
     """
     import matplotlib
     import matplotlib.pyplot as plt
 
     from .._version import __version__
-    from . import _figdebug
+    from . import _figdebug, paths
     from ._env import get_template
-    from ._mission import PAGES, Ctx, build, header_card, mission_id
+    from ._mission import PAGES, Ctx, build, header_card
     from ._report_css import _JS_TOP_LINKS, PACKAGE_ACCENT, SHARED_CSS
     from .manifest import mission_manifest
 
+    if layout not in ("root", "flat"):
+        msg = f"layout must be 'root' or 'flat', got {layout!r}"
+        raise ValueError(msg)
+    if mission_id is not None and layout == "flat":
+        msg = "mission_id cannot be combined with layout='flat' (there is no subdirectory to name)"
+        raise ValueError(msg)
     root = Path(outdir)
-    mid = mission_id(ds)
-    missiondir = root / mid
+    if layout == "flat" and paths.is_report_root(root):
+        msg = (
+            f"{root} is a report root (it already holds mission subdirectories); writing a flat "
+            f"report here would overwrite its fleet index.html. Use layout='root', or a fresh "
+            f"directory."
+        )
+        raise ValueError(msg)
+    mid = resolve_mission_id(ds, mission_id)
+    missiondir = root if layout == "flat" else paths.mission_dir(root, mid)
+    do_navigator = navigator and layout == "root"
     (missiondir / "figures").mkdir(parents=True, exist_ok=True)
 
     ctx = Ctx(ds=ds)
@@ -115,21 +177,29 @@ def report(ds: xr.Dataset, outdir: Path | str, *, navigator: bool = True) -> Pat
         except OSError:
             source_size = None
 
-    # Overwriting a mission on a re-run is intended; overwriting with a *different* source file under
-    # the same OG1 id is a metadata problem (two files claiming one id) — surface it, do not hide it.
-    existing = missiondir / "report.json"
+    # Overwriting on a re-run (same source file) is intended and silent; overwriting with a
+    # *different* source file is worth a warning, whose cause differs by layout: in root layout two
+    # files share one OG1 id (a metadata problem); in flat layout the output directory was reused.
+    existing = paths.manifest_in(missiondir)
     if existing.exists():
         try:
             prev = json.loads(existing.read_text(encoding="utf-8"))
         except (OSError, ValueError):
             prev = {}
-        if prev.get("source_file") and prev["source_file"] != source_name:
-            warnings.warn(
-                f"mission id {mid!r} already reported from {prev['source_file']!r}; "
-                f"overwriting with {source_name!r}. Two files sharing one OG1 id is a metadata "
-                f"problem — check the 'id' attribute of both files.",
-                stacklevel=2,
-            )
+        prev_source = prev.get("source_file")
+        if prev_source and prev_source != source_name:
+            if layout == "flat":
+                msg = (
+                    f"{root} already holds a report for {prev_source!r}; "
+                    f"overwriting with {source_name!r}."
+                )
+            else:
+                msg = (
+                    f"mission id {mid!r} already reported from {prev_source!r}; overwriting with "
+                    f"{source_name!r}. Two files sharing one OG1 id is a metadata problem — check "
+                    f"the 'id' attribute of both files."
+                )
+            warnings.warn(msg, stacklevel=2)
 
     generated_at = datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC")
     common = {
@@ -160,7 +230,9 @@ def report(ds: xr.Dataset, outdir: Path | str, *, navigator: bool = True) -> Pat
                         (missiondir / "figures" / f"{slug}_{panel.id}.png").write_bytes(
                             base64.b64decode(panel.payload)
                         )
-            nav = _build_nav(pages, page, source_name, back=navigator)
+            # Root layout always links back to the fleet page at ../index.html (the root convention),
+            # whether this call rebuilds it or a later navigator() does; flat -o has no fleet page.
+            nav = _build_nav(pages, page, source_name, back=(layout == "root"))
             rendered = template.render(
                 report=resolved,
                 nav=nav,
@@ -181,9 +253,9 @@ def report(ds: xr.Dataset, outdir: Path | str, *, navigator: bool = True) -> Pat
             version=__version__,
             generated_at=generated_at,
         )
-        (missiondir / "report.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+        existing.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
 
-        if navigator:
+        if do_navigator:
             _build_navigator(root)  # draws the tracks map under the same Agg backend
     finally:
         if switch:
@@ -211,7 +283,29 @@ def navigator(root: Path | str, title: str | None = None) -> Path:
     -------
     pathlib.Path
         The path to the written ``<root>/index.html``.
+
+    Raises
+    ------
+    FileNotFoundError
+        If *root* is not an existing directory.
+    ValueError
+        If *root* is itself a mission report directory (it holds a top-level ``report.json``, as a
+        ``layout="flat"`` report does); indexing it would find no missions and overwrite its landing
+        page. Pass the parent directory instead.
     """
+    from . import paths
+
+    root = Path(root)
+    if not root.is_dir():
+        msg = f"report root not found: {root}"
+        raise FileNotFoundError(msg)
+    if paths.manifest_in(root).exists():
+        msg = (
+            f"{root} is a mission report directory (it holds a top-level report.json), not a fleet "
+            f"root; its index.html is the mission landing page — pass the parent directory."
+        )
+        raise ValueError(msg)
+
     import matplotlib
     import matplotlib.pyplot as plt
 
@@ -220,7 +314,7 @@ def navigator(root: Path | str, title: str | None = None) -> Path:
     if switch:
         plt.switch_backend("Agg")
     try:
-        return _build_navigator(Path(root), title)
+        return _build_navigator(root, title)
     finally:
         if switch:
             plt.switch_backend(orig_backend)
@@ -228,6 +322,6 @@ def navigator(root: Path | str, title: str | None = None) -> Path:
 
 def _build_navigator(root: Path, title: str | None = None) -> Path:
     """Render ``<root>/index.html`` from the manifests; caller owns the Matplotlib backend."""
-    from .navigator import build_navigator
+    from ._navigator import build_navigator
 
     return build_navigator(root, title)
