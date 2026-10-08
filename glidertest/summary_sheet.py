@@ -7,6 +7,7 @@ import pypandoc
 import matplotlib
 from pathlib import Path
 import matplotlib.pyplot as plt
+from glidertest.utilities import _log
 
 
 def create_docfile(ds, path):
@@ -464,7 +465,7 @@ def rst_to_md(path, filename):
     """
 
     pypandoc.convert_file(f'{path}/{filename}.rst', 'md', format='rst', outputfile=f'{path}/{filename}.md')
-    print(f"Converted RST to Markdown and saved to: {path}")
+    _log.info(f"Converted RST to Markdown and saved to: {path}")
 
 def mission_report(ds, report_folder_path, report_type='General'):
     """
@@ -506,7 +507,7 @@ def mission_report(ds, report_folder_path, report_type='General'):
     report_dir = report_folder_path / folder_name
     if not report_dir.is_dir():
         Path(report_dir).mkdir(parents=True)
-        print(f"writing reports to directory {report_dir}")
+        _log.info(f"writing reports to directory {report_dir}")
 
     matplotlib.use('Agg')
     if report_type=='General':
@@ -528,7 +529,7 @@ def mission_report(ds, report_folder_path, report_type='General'):
             create_optics_doc(ds, report_dir)
             rst_to_md(Path(report_dir), 'optics')
 
-    print(f"Your report is saved in {report_dir} in rst and markdown")
+    _log.info(f"Your report is saved in {report_dir} in rst and markdown")
 
 def template_docfile(ds, path):
     """
