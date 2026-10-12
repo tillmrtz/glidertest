@@ -17,9 +17,11 @@ module — grid's in ``reports/_grid.py``, and so on — never in a plural
 
 from __future__ import annotations
 
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any, Literal
+
+from ..config.report_tokens import ROLE_ACCENT
 
 #: A page's render context, threaded opaque through the resolver: the concrete keys are
 #: decided by each page's own registry (grid's ``Ctx``, etc.), never by this package-neutral
@@ -63,8 +65,9 @@ class Panel:
         ``"figure"``, or ready-to-emit markup for ``"html"``/``"table"`` — or
         ``None`` when the panel applies but no output could be produced (a plot
         raised, or the variable is absent), which the resolver turns into a
-        ``.warn`` stub.  Figure adapters wrap the existing ``_make_*_b64``
-        functions unchanged.
+        ``.warn`` stub.  May instead return a :class:`Stub` to carry the reason
+        the panel is empty, so the stub says *why*.  Figure adapters wrap the
+        existing ``_make_*_b64`` functions unchanged.
     kind : {"figure", "html", "table"}, optional
         Content discriminator.  The template macro branches on it so that only
         ``"html"``/``"table"`` payloads are emitted ``|safe``; a ``"figure"``
@@ -94,7 +97,7 @@ class Panel:
     """
 
     id: str
-    render: Callable[[Any], str | None]
+    render: Callable[[Any], str | Stub | None]
     kind: PanelKind = "figure"
     slot: str | Callable[[Any], str] | None = "full"
     caption: str | None = None
@@ -264,6 +267,24 @@ class ResolvedReport:
 _STUB_REASON = "applicable but unavailable"
 
 
+@dataclass(frozen=True)
+class Stub:
+    """Returned by a panel's ``render`` when the panel applies but could not be produced.
+
+    Carries the reason the panel is empty (e.g. the exception a draw function
+    raised) so the page can say *why* a panel is absent, not merely that it is.
+    A bare ``None`` from ``render`` still means the generic stub.
+
+    Parameters
+    ----------
+    reason : str
+        Human-readable cause, appended to the generic stub text as
+        ``"applicable but unavailable: <reason>"`` by :func:`_resolve_panels`.
+    """
+
+    reason: str
+
+
 def _letter(n: int) -> str:
     """Return the appendix letter for a zero-based index (0 -> 'A', 25 -> 'Z', 26 -> 'AA')."""
     letters = ""
@@ -338,7 +359,10 @@ def _resolve_panels(
             payload, stub_reason = None, reason
         else:
             payload = panel.render(ctx)
-            stub_reason = None if payload is not None else _STUB_REASON
+            if isinstance(payload, Stub):
+                payload, stub_reason = None, f"{_STUB_REASON}: {payload.reason}"
+            else:
+                stub_reason = None if payload is not None else _STUB_REASON
         resolved.append(
             ResolvedPanel(
                 id=panel.id,
@@ -459,3 +483,63 @@ def resolve(
     return ResolvedReport(
         sections=tuple(resolved), not_applicable=tuple(not_applicable)
     )
+
+
+# ---------------------------------------------------------------------------
+# Masthead nav — the page chrome above the content (vendored contract)
+# ---------------------------------------------------------------------------
+#: The states a nav pill may carry: a live link, the current page (muted,
+#: unclickable), or a page not yet generated (greyed, unclickable).
+_NAV_STATES = frozenset({"link", "current", "missing"})
+
+
+def validate_nav(nav: Mapping) -> None:
+    """Raise :class:`ValueError` unless the nav mapping is well formed.
+
+    The nav is a plain mapping built per page::
+
+        {"rows": [{"label": str, "pills": [pill, ...]}, ...],
+         "back": pill | None,
+         "inventory": [pill, ...]}
+
+    where a *pill* is ``{"label", "href", "role", "state"}``.  The checks:
+    at most one pill across the rows and the inventory strip has
+    ``state == "current"`` (two would be an ambiguous highlight; zero is valid —
+    an inventory page rendered without its own strip highlights nothing and still
+    shows the row to get back); every pill's ``role`` is a :data:`ROLE_ACCENT`
+    key; every ``state`` is one of ``link``/``current``/``missing``; every
+    ``link`` pill has a non-empty ``href``.  The ``back`` up-link is field-checked
+    but is not counted toward the current tally.
+
+    Parameters
+    ----------
+    nav : collections.abc.Mapping
+        The per-page nav mapping described above.
+
+    Raises
+    ------
+    ValueError
+        If any check fails, with a message naming the offending pill.
+    """
+    rows = nav.get("rows", ())
+    inventory = tuple(nav.get("inventory", ()))
+    back = nav.get("back")
+
+    counted = [pill for row in rows for pill in row.get("pills", ())]
+    counted.extend(inventory)
+
+    for pill in (*counted, *((back,) if back is not None else ())):
+        role = pill.get("role")
+        if role not in ROLE_ACCENT:
+            raise ValueError(f"nav pill role {role!r} is not a ROLE_ACCENT key")
+        state = pill.get("state", "link")
+        if state not in _NAV_STATES:
+            raise ValueError(
+                f"nav pill state {state!r} is not one of {sorted(_NAV_STATES)}"
+            )
+        if state == "link" and not pill.get("href"):
+            raise ValueError(f"nav link pill {pill.get('label')!r} has no href")
+
+    n_current = sum(1 for pill in counted if pill.get("state") == "current")
+    if n_current > 1:
+        raise ValueError(f"nav must have at most one 'current' pill, found {n_current}")

@@ -15,7 +15,7 @@
   <figure class="slot-{{ sl }}">
     {%- if p.caption %}<figcaption>{{ p.caption }}</figcaption>{% endif %}
     <img src="data:image/png;base64,{{ p.payload }}" alt="{{ p.caption or p.id }}">
-    {%- set src = figsource(p.payload) %}{% if src %}<div class="fig-source">source: {{ src }}</div>{% endif %}
+    {%- set src = figsource(p.payload) %}{% if src %}<div class="fig-source">source: glidertest/plots.py:{{ src }}</div>{% endif %}
     {{- dbg(p.payload, sl) }}
   </figure>
 {%- else %}{# html | table #}
@@ -24,20 +24,6 @@
   <div class="html-panel">{{ p.payload | safe }}</div>
 {%- endif %}
 {% endmacro %}
-
-{# Cross-page nav, rendered inside the masthead as role-coloured pills with a "Pages:" label
-   (the ctdcast/oceanarray shape). Each entry is {label, href, role, current}; role picks the CSS
-   class (nav-landing / nav-component / nav-map); the current page is a muted non-link pill.
-   Rendered only when there is more than one page, so a single-page report shows no nav. #}
-{# Masthead nav: an optional back pill, then one row per group (label + role-coloured pills).
-   `nav` is the shape built by reports._build_nav (shared-design-system §2): {rows, back, inventory}.
-   A pill is {label, href, role, state}; state "current" renders a muted non-link. This macro stays
-   in glidertest's layer for now and is replaced by the vendored _nav.html macro at re-vendor. #}
-{% macro _pill(p) %}{% if p.state == "current" %}<span class="nav-pill nav-{{ p.role }} nav-current">{{ p.label }}</span>{% else %}<a class="nav-pill nav-{{ p.role }}" href="{{ p.href }}">{{ p.label }}</a>{% endif %}{% endmacro %}
-{% macro page_nav(nav) %}{% if nav.back or nav.rows %}<nav class="page-nav">{% if nav.back %}<a class="nav-pill nav-back" href="{{ nav.back.href }}">{{ nav.back.label }}</a>{% endif %}{% for row in nav.rows %}<span class="nav-row"><span class="page-nav-label">{{ row.label }}:</span>{% for p in row.pills %}{{ _pill(p) }}{% endfor %}</span>{% endfor %}</nav>{% endif %}{% endmacro %}
-
-{# The "Data inventory:" strip (role-neutral file pills). Folded into the masthead, not below it. #}
-{% macro inventory_strip(nav) %}{% if nav.inventory %}<nav class="inventory-strip"><span class="label">Data inventory:</span>{% for p in nav.inventory %}{% if p.state == "current" %}<span class="file-pill file-pill-active">{{ p.label }}</span>{% else %}<a class="file-pill" href="{{ p.href }}">{{ p.label }}</a>{% endif %}{% endfor %}</nav>{% endif %}{% endmacro %}
 
 {# Stacked QC distribution bar: segments are {key, width, title}; colour comes from the qc-seg-*
    class. The width % is the one allowed inline style. small=True selects the dashed diagnostics bar. #}
@@ -83,18 +69,4 @@
 {% endfor %}
 {% if not report.sections %}<p class="caption">No plottable data for this selection.</p>{% endif %}
 {% if report.not_applicable %}<p class="caption">Not applicable to this {% if report.sections %}selection{% else %}deployment{% endif %}: {{ report.not_applicable | join(", ") }}.</p>{% endif %}
-{% endmacro %}
-
-
-{# Cross-navigation pill bar linking the compiled-file inventory pages
-   (profiles.nc / ladcp_profiles.nc / SBE sensors).  The page matching
-   current_href is rendered as a non-link active pill.  Requires the
-   .inventory-strip / .file-pill CSS (in each page's head_extra). #}
-{% macro inventory_pills(pills, current_href="") %}
-{% if pills %}
-<nav class="inventory-strip">
-  <span class="label">Data inventory:</span>
-  {% for d in pills %}{% if d.href == current_href %}<span class="file-pill file-pill-active">{{ d.label }}</span>{% else %}<a class="file-pill" href="{{ d.href }}">{{ d.label }}</a>{% endif %}{% endfor %}
-</nav>
-{% endif %}
 {% endmacro %}

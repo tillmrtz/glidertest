@@ -10,11 +10,13 @@ from __future__ import annotations
 
 import html
 from dataclasses import dataclass
+from functools import cached_property
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
+from .. import og1_attrs
 from . import _plots, inventory, metadata, qc_section, sensors
 from ._env import get_template
 from ._manifest import Panel, Profile, ResolvedReport, Section, resolve
@@ -25,11 +27,28 @@ if TYPE_CHECKING:
     import xarray as xr
 
 
-@dataclass(frozen=True)
+@dataclass
 class Ctx:
-    """Render context for the mission page: the dataset every panel reads."""
+    """Render context for a page: the dataset, plus the mission facts and file inventory.
+
+    ``facts`` and ``inv`` are computed once, on first access, and reused by every panel and
+    predicate — the inventory page would otherwise rebuild the inventory for each subsection and
+    again in each ``applies_to``, and ``mission_facts`` would run for the masthead, the manifest and
+    the spatiotemporal table separately. One :class:`Ctx` is shared across a report's pages, so each
+    is computed once per report.
+    """
 
     ds: xr.Dataset
+
+    @cached_property
+    def facts(self) -> dict[str, Any]:
+        """Mission summary (:func:`glidertest.reports.metadata.mission_facts`), computed once."""
+        return metadata.mission_facts(self.ds)
+
+    @cached_property
+    def inv(self) -> dict[str, Any]:
+        """File inventory (:func:`glidertest.reports.inventory.inventory_data`), computed once."""
+        return inventory.inventory_data(self.ds)
 
 
 def _deg_range(lo: float, hi: float, pos: str, neg: str) -> str:
@@ -45,15 +64,17 @@ def _deg_range(lo: float, hi: float, pos: str, neg: str) -> str:
     return f"{one(lo)}–{one(hi)}"
 
 
-def header_card(ds: xr.Dataset) -> list[tuple[str, str]]:
+def header_card(ds: xr.Dataset, facts: dict[str, Any] | None = None) -> list[tuple[str, str]]:
     """Return (label, value) pairs for the masthead meta-grid: platform serial plus a mission summary.
 
     The overview statistics come from :func:`glidertest.reports.metadata.mission_facts` (the same
     source the manifest reads, so the two cannot disagree). A field whose source is absent is skipped;
     one that cannot be computed shows ``UNK`` (or ``—`` for profile counts when PROFILE_NUMBER is
     all-NaN). The file size is read here; the file name itself is the masthead subtitle.
+
+    *facts* is a prebuilt :func:`mission_facts` result; when None it is computed from *ds*.
     """
-    f = metadata.mission_facts(ds)
+    f = metadata.mission_facts(ds) if facts is None else facts
     fields: list[tuple[str, str]] = []
     if "PLATFORM_SERIAL_NUMBER" in ds:
         fields.append(("Platform serial", f["platform_serial"] or "UNK"))
@@ -74,12 +95,14 @@ def header_card(ds: xr.Dataset) -> list[tuple[str, str]]:
         dt = np.diff(np.asarray(ds["TIME"].values))  # timedelta64; NaT where either end is NaT
         valid = dt[~np.isnat(dt)]
         med = np.median(valid.astype("timedelta64[s]").astype(float)) if valid.size else np.nan
-        fields.append(("Sampling", f"{med:.0f} s" if np.isfinite(med) else "UNK"))
+        sampling = f"{med:.0f} s" if np.isfinite(med) else "UNK"
     if f["depth_min"] is not None:
         fields.append(("Dive depth", f"{int(f['depth_min'])}–{int(f['depth_max'])} m"))
     if f["lat_min"] is not None:
         fields.append(("Lat", _deg_range(f["lat_min"], f["lat_max"], "N", "S")))
         fields.append(("Lon", _deg_range(f["lon_min"], f["lon_max"], "E", "W")))
+    if sampling is not None:  # sampling period sits after lat/lon in the masthead grid
+        fields.append(("Sampling", sampling))
     if "N_MEASUREMENTS" in ds.sizes:
         fields.append(("Records", f"{f['n_records']:,}"))
     source = ds.encoding.get("source")
@@ -233,18 +256,6 @@ PANELS: dict[str, Panel] = {
             lambda c: get_template("_qc_glidertest.html").render(**qc_section.diagnostics_data(c.ds))
         ),
     ),
-    "og1_conformance": Panel(
-        id="og1_conformance",
-        kind="html",
-        render=_guarded(
-            lambda c: get_template("_og1_conformance.html").render(**metadata.conformance_data(c.ds))
-        ),
-    ),
-    "file_contents": Panel(
-        id="file_contents",
-        kind="html",
-        render=_guarded(lambda c: get_template("_inventory.html").render(**inventory.inventory_data(c.ds))),
-    ),
 }
 
 
@@ -375,13 +386,87 @@ PROFILE = Profile(
     ),
 )
 
-# The inventory page: everything about the *file* rather than the mission — the OG1 global-attribute
-# conformance (merged with the attribute values) and the full variable/sensor inventory. Split off
-# the landing page so the landing stays about the mission (ctdcast's index/inventory division).
+# The inventory page: everything about the *file* rather than the mission. One Section per
+# subsection, so each gets its own jump-nav entry (the bar is one-entry-per-Section). Each renders a
+# thin slice of the existing builders (metadata.attr_category_data / inventory.inventory_slice). The
+# four OG1 attribute categories always render — an empty category with its mandatory rows in amber is
+# the strongest finding on the page — so only Other / other-dimension variables / scalars carry
+# applies_to; the sensor catalog stays with a stub reason when a file has no SENSOR_* variables.
+_ATTR_CATEGORY_IDS: dict[str, str] = {
+    "Identity & discovery": "og1_identity",
+    "Spatiotemporal coverage": "og1_coverage",
+    "People & institutions": "og1_people",
+    "Provenance & processing": "og1_provenance",
+    og1_attrs.OTHER_GROUP: "og1_other",
+}
+
+_ATTR_SECTIONS: list[Section] = []
+for _title, _ in og1_attrs.ATTR_GROUPS:
+    _sid = _ATTR_CATEGORY_IDS[_title]
+    PANELS[_sid] = Panel(
+        id=_sid,
+        kind="html",
+        render=_guarded(
+            lambda c, t=_title: get_template("_og1_conformance.html").render(
+                **metadata.attr_category_data(c.ds, t, c.facts)
+            )
+        ),
+    )
+    _ATTR_SECTIONS.append(Section(id=_sid, title=_title, panels=(_sid,)))
+
+PANELS["og1_other"] = Panel(
+    id="og1_other",
+    kind="html",
+    render=_guarded(
+        lambda c: get_template("_og1_conformance.html").render(
+            **metadata.attr_category_data(c.ds, og1_attrs.OTHER_GROUP)
+        )
+    ),
+    applies_to=lambda c: metadata.has_other_attrs(c.ds),
+)
+
+
+def _inv_render(which: str) -> Callable[[Ctx], str | None]:
+    """Return an html-panel render for one inventory slice (coords / measurements / …)."""
+    return _guarded(
+        lambda c: get_template("_inventory.html").render(**inventory.inventory_slice(c.ds, which, data=c.inv))
+    )
+
+
+PANELS["coords"] = Panel(id="coords", kind="html", render=_inv_render("coords"))
+PANELS["measurements"] = Panel(id="measurements", kind="html", render=_inv_render("measurements"))
+PANELS["other_dims"] = Panel(
+    id="other_dims",
+    kind="html",
+    render=_inv_render("other_dims"),
+    applies_to=lambda c: bool(inventory.inventory_slice(c.ds, "other_dims", data=c.inv)["groups"]),
+)
+PANELS["scalars"] = Panel(
+    id="scalars",
+    kind="html",
+    render=_inv_render("scalars"),
+    applies_to=lambda c: bool(inventory.inventory_slice(c.ds, "scalars", data=c.inv)["groups"]),
+)
+PANELS["sensors"] = Panel(
+    id="sensors",
+    kind="html",
+    render=_inv_render("sensors"),
+    unavailable_if=lambda c: (
+        None
+        if inventory.inventory_slice(c.ds, "sensors", data=c.inv)["sensors"]
+        else "no SENSOR_* variables in the file"
+    ),
+)
+
 INVENTORY = Profile(
     entries=(
-        Section(id="og1", title="Global attributes", panels=("og1_conformance",)),
-        Section(id="file_contents", title="File contents", panels=("file_contents",)),
+        *_ATTR_SECTIONS,
+        Section(id="og1_other", title=og1_attrs.OTHER_GROUP, panels=("og1_other",)),
+        Section(id="coords", title="Coordinates", panels=("coords",)),
+        Section(id="measurements", title="Variables on N_MEASUREMENTS", panels=("measurements",)),
+        Section(id="other_dims", title="Variables on other dimensions", panels=("other_dims",)),
+        Section(id="scalars", title="Scalar variables", panels=("scalars",)),
+        Section(id="sensors", title="Sensor catalog", panels=("sensors",)),
     ),
 )
 
@@ -403,6 +488,9 @@ class Page:
     nav_group: str
     profile: Profile
     applies_to: Callable[[Ctx], bool]
+    #: Optional page intro rendered above the jump-nav (page-level prose that belongs to no one
+    #: section, e.g. the inventory page's OG1 verdict and variable counts). ``Ctx -> html``.
+    lead: Callable[[Ctx], str] | None = None
 
 
 # Sensor pages share a typed-subsection shape (each becomes an in-page jump-nav entry): Sensor,
@@ -455,6 +543,13 @@ FLIGHT = Profile(
 )
 
 
+def _inventory_lead(ctx: Ctx) -> str:
+    """Inventory page intro (above the jump-nav): the OG1 verdict and the variable/QC counts."""
+    return get_template("_inventory_intro.html").render(
+        verdict=metadata.verdict_line(ctx.ds), **ctx.inv
+    )
+
+
 #: The report's pages. The landing page (``index.html``) and the sensor pages are the nav pills;
 #: the inventory (``role="inventory"``) is linked from a strip below the masthead, not a pill, and is
 #: listed last so the landing page stays first (the returned path and the nav's leading pill).
@@ -470,11 +565,15 @@ PAGES: tuple[Page, ...] = (
          lambda c: any(v in c.ds for v in ("CHLA", "BBP700"))),
     Page("flight.html", "Flight", "Flight", "aggregate-a", "derived", FLIGHT,
          _has("GLIDER_VERT_VELO_MODEL")),
-    Page("inventory.html", "File contents", "netCDF Inventory", "inventory", "inventory", INVENTORY,
-         lambda _c: True),
+    Page("inventory.html", "Inventory", "netCDF Inventory", "inventory", "inventory", INVENTORY,
+         lambda _c: True, lead=_inventory_lead),
 )
 
 
-def build(ds: xr.Dataset, profile: Profile) -> ResolvedReport:
-    """Resolve *profile* against *ds* into a numbered report."""
-    return resolve(profile, Ctx(ds=ds), PANELS)
+def build(ds: xr.Dataset, profile: Profile, *, ctx: Ctx | None = None) -> ResolvedReport:
+    """Resolve *profile* against *ds* into a numbered report.
+
+    *ctx* is a shared :class:`Ctx` to resolve against; when None a fresh one is built from *ds*. The
+    report passes one ``Ctx`` across all pages so ``mission_facts`` and the inventory are built once.
+    """
+    return resolve(profile, ctx or Ctx(ds=ds), PANELS)

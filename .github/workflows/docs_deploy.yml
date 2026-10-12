@@ -23,7 +23,7 @@ jobs:
         environment-name: TEST
         init-shell: bash
         create-args: >-
-          python=3 pip pandoc
+          python=3.13 pip pandoc
           --channel conda-forge
 
     - name: Install glidertest

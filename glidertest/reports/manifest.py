@@ -31,6 +31,14 @@ def _track(ds: xr.Dataset) -> list[list[float]]:
     lon = np.asarray(ds["LONGITUDE"].values)
     lat = np.asarray(ds["LATITUDE"].values)
     m = np.isfinite(lon) & np.isfinite(lat)
+    # Drop only positions the file flags bad (OG1 QC flag 3 bad / 4 probably-bad), so a spurious fix
+    # does not stretch the track or the fleet-map extent. Flag 0 ("no QC applied") is the common
+    # delivered state and is kept — dropping it would empty the track of every file whose provider
+    # ran no position QC. Missing positions are already removed by the finite mask. No QC var -> keep.
+    for var in ("LONGITUDE", "LATITUDE"):
+        qc = f"{var}_QC"
+        if qc in ds:
+            m &= ~np.isin(np.asarray(ds[qc].values), (3, 4))
     lon, lat = lon[m], lat[m]
     if lon.size > _TRACK_POINTS:
         idx = np.linspace(0, lon.size - 1, _TRACK_POINTS).astype(int)
@@ -78,6 +86,7 @@ def mission_manifest(
     pages: Sequence[tuple[str, str]],
     version: str,
     generated_at: str,
+    facts: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Return the mission manifest dict, serialised to ``report.json`` beside ``index.html``.
 
@@ -97,6 +106,9 @@ def mission_manifest(
         The glidertest version that produced the report.
     generated_at : str
         The generation timestamp (same string shown in the masthead).
+    facts : dict, optional
+        A prebuilt :func:`glidertest.reports.metadata.mission_facts` result; computed from *ds*
+        when None. The report passes one build so the masthead and manifest share it.
 
     Returns
     -------
@@ -105,7 +117,8 @@ def mission_manifest(
     """
     from . import metadata
 
-    f = metadata.mission_facts(ds)  # the same facts the masthead reads, so the two cannot disagree
+    # The same facts the masthead reads, so the two cannot disagree; the report passes one build in.
+    f = metadata.mission_facts(ds) if facts is None else facts
     missing = [n for n in og1_attrs.MANDATORY_GLOBALS if not str(ds.attrs.get(n) or "").strip()]
     summary = og1_attrs.conformance_summary(ds.attrs)
 

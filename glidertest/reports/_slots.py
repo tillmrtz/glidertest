@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 from .. import plots
 from ..config.report_tokens import MPLSTYLE_PATH, SLOTS
 from . import _figdebug
+from ._manifest import Stub
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -60,6 +61,7 @@ def render(
     slot: str = "full",
     source: str = "",
     optional: bool = False,
+    on_error: Callable[[BaseException], None] | None = None,
     **kwargs: Any,  # noqa: ANN401  # forwarded verbatim to *draw*
 ) -> str | None:
     """Render *draw* at the *slot* width under the report style, returning a base64 PNG.
@@ -82,6 +84,9 @@ def render(
         shown as a ``source:`` line under it. Empty to omit.
     optional : bool
         Forwarded to the encoder; when ``True`` a ``None`` figure is dropped silently.
+    on_error : callable or None
+        Forwarded to the encoder; called with the caught exception when *draw* raises and
+        ``RAISE_ON_PLOT_ERROR`` is unset. :func:`render_panel` uses it to capture the cause.
 
     Returns
     -------
@@ -98,9 +103,55 @@ def render(
                 lambda *a, **k: _force_width(draw(*a, **k), width_in),
                 *args,
                 optional=optional,
+                on_error=on_error,
                 **kwargs,
             )
     finally:
         plots._ACTIVE_STYLE = original
     _figdebug.record_source(b64, source)  # the plotter name for the figure's "source:" line
+    return b64
+
+
+def render_panel(
+    draw: Callable[..., Figure | None],
+    /,
+    *args: Any,  # noqa: ANN401  # forwarded verbatim to *draw*
+    slot: str = "full",
+    source: str = "",
+    optional: bool = True,
+    **kwargs: Any,  # noqa: ANN401  # forwarded verbatim to *draw*
+) -> str | Stub | None:
+    """Render *draw* like :func:`render`, but a *draw* that raises yields a :class:`Stub`.
+
+    For the figure-panel adapters in :mod:`glidertest.reports._plots`: a *draw* returning ``None``
+    (its data is absent) still returns ``None`` and the panel drops silently; a *draw* that *raises*
+    — when ``RAISE_ON_PLOT_ERROR`` is unset — becomes ``Stub("<ExcType>: <message>")``, which
+    :func:`_resolve_panels` renders as "applicable but unavailable: <reason>" on the page. This is
+    why :func:`render` itself stays ``str | None``: the navigator track map embeds its result behind
+    an ``if map_png`` gate, where a truthy ``Stub`` would emit a broken ``<img>`` — so that path must
+    keep silent-omission and does not use this wrapper.
+
+    Counterpart to ctdcast's ``_figdebug.as_panel`` — only ``Panel.render`` adapters produce a
+    ``Stub``, direct embeds keep ``str | None`` — so the two packages share one stub contract.
+
+    Returns
+    -------
+    str or Stub or None
+        The base64 PNG; ``Stub(reason)`` when *draw* raised; ``None`` when the figure was absent.
+    """
+    captured: dict[str, str] = {}
+
+    def _capture(exc: BaseException) -> None:
+        # The reason shows on the page, so keep it to one readable line: the first non-empty line of
+        # the message, length-capped. Strip first so a message starting with "\n" keeps its text
+        # instead of yielding a blank first line. The full exception still reaches the encoder warning.
+        stripped = str(exc).strip()
+        msg = stripped.splitlines()[0] if stripped else ""
+        if len(msg) > 140:
+            msg = msg[:139] + "…"
+        captured["reason"] = f"{type(exc).__name__}: {msg}" if msg else type(exc).__name__
+
+    b64 = render(draw, *args, slot=slot, source=source, optional=optional, on_error=_capture, **kwargs)
+    if b64 is None and captured:
+        return Stub(captured["reason"])
     return b64

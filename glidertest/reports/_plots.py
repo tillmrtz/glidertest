@@ -1,10 +1,11 @@
 """Plot adapters: glidertest plotters → base64 report panels at the slot width.
 
 Each adapter unwraps the plotter's ``(fig, ax)`` return to the Figure the slot layer needs and
-routes it through :func:`glidertest.reports._slots.render`. Adapters never pass a width to the
+routes it through :func:`glidertest.reports._slots.render_panel`. Adapters never pass a width to the
 plotter — glidertest's plot functions do not accept one; the slot layer forces the width after the
-draw. Each returns a base64 PNG, or ``None`` when the plot could not be produced (the panel then
-drops out of the page).
+draw. Each returns a base64 PNG; ``None`` when the plot's data is absent (the panel drops out of the
+page); or a :class:`~glidertest.reports._manifest.Stub` carrying the reason when the draw raises, so
+the panel shows "applicable but unavailable: …" instead of vanishing silently.
 """
 
 from __future__ import annotations
@@ -19,72 +20,74 @@ from . import _slots
 if TYPE_CHECKING:
     import xarray as xr
 
+    from ._manifest import Stub
 
-def track(ds: xr.Dataset) -> str | None:
+
+def track(ds: xr.Dataset) -> str | Stub | None:
     """Render the glider track map panel."""
-    return _slots.render(lambda: plots.plot_glider_track(ds)[0], source="plot_glider_track", optional=True)
+    return _slots.render_panel(lambda: plots.plot_glider_track(ds)[0], source="plot_glider_track", optional=True)
 
 
-def basic_vars(ds: xr.Dataset) -> str | None:
+def basic_vars(ds: xr.Dataset) -> str | Stub | None:
     """Render the depth-profile panel of the core variables (mission-mean profiles)."""
-    return _slots.render(lambda: plots.plot_basic_vars(ds)[0], source="plot_basic_vars", optional=True)
+    return _slots.render_panel(lambda: plots.plot_basic_vars(ds)[0], source="plot_basic_vars", optional=True)
 
 
-def ts(ds: xr.Dataset) -> str | None:
+def ts(ds: xr.Dataset) -> str | Stub | None:
     """Render the temperature–salinity diagram panel."""
-    return _slots.render(lambda: plots.plot_ts(ds)[0], source="plot_ts", optional=True)
+    return _slots.render_panel(lambda: plots.plot_ts(ds)[0], source="plot_ts", optional=True)
 
 
-def max_depth(ds: xr.Dataset) -> str | None:
+def max_depth(ds: xr.Dataset) -> str | Stub | None:
     """Render the maximum-depth-per-profile panel."""
-    return _slots.render(lambda: plots.plot_max_depth_per_profile(ds)[0], source="plot_max_depth_per_profile", optional=True)
+    return _slots.render_panel(lambda: plots.plot_max_depth_per_profile(ds)[0], source="plot_max_depth_per_profile", optional=True)
 
 
-def section(ds: xr.Dataset, var: str) -> str | None:
+def section(ds: xr.Dataset, var: str) -> str | Stub | None:
     """Render a depth–time section panel for *var* over the whole mission (pcolormesh).
 
     ``plot_section`` returns ``(ax, cbar, time_ax)`` rather than ``(fig, ax)``, so the figure is
     taken from the axes.
     """
-    return _slots.render(
+    return _slots.render_panel(
         lambda: plots.plot_section(ds, variables=[var], method="pcolormesh")[0].get_figure(), source="plot_section", optional=True
     )
 
 
-def grid_spacing(ds: xr.Dataset) -> str | None:
+def grid_spacing(ds: xr.Dataset) -> str | Stub | None:
     """Render the horizontal/vertical grid-spacing panel."""
-    return _slots.render(lambda: plots.plot_grid_spacing(ds)[0], source="plot_grid_spacing", optional=True)
+    return _slots.render_panel(lambda: plots.plot_grid_spacing(ds)[0], source="plot_grid_spacing", optional=True)
 
 
-def sampling_period(ds: xr.Dataset) -> str | None:
+def sampling_period(ds: xr.Dataset) -> str | Stub | None:
     """Render the sampling-period panel."""
-    return _slots.render(lambda: plots.plot_sampling_period_all(ds)[0], source="plot_sampling_period_all", optional=True)
+    return _slots.render_panel(lambda: plots.plot_sampling_period_all(ds)[0], source="plot_sampling_period_all", optional=True)
 
 
-def prof_monotony(ds: xr.Dataset) -> str | None:
+def prof_monotony(ds: xr.Dataset) -> str | Stub | None:
     """Render the profile-number monotonicity panel."""
-    return _slots.render(lambda: plots.plot_prof_monotony(ds)[0], source="plot_prof_monotony", optional=True)
+    return _slots.render_panel(lambda: plots.plot_prof_monotony(ds)[0], source="plot_prof_monotony", optional=True)
 
 
 # --- variable-parameterised adapters (sensor pages) ---------------------------------------------
 
 
-def hysteresis(ds: xr.Dataset, var: str, slot: str = "full") -> str | None:
+def hysteresis(ds: xr.Dataset, var: str, slot: str = "full") -> str | Stub | None:
     """Render the dive–climb hysteresis panel for *var*."""
-    return _slots.render(lambda: plots.plot_hysteresis(ds, variable=var)[0], slot=slot, source="plot_hysteresis", optional=True)
+    return _slots.render_panel(lambda: plots.plot_hysteresis(ds, variable=var)[0], slot=slot, source="plot_hysteresis", optional=True)
 
 
-def updown_bias(ds: xr.Dataset, var: str, slot: str = "half") -> str | None:
+def updown_bias(ds: xr.Dataset, var: str, slot: str = "half") -> str | Stub | None:
     """Render the up/down-cast bias panel for *var* (a narrow profile plot, half width by default)."""
-    return _slots.render(lambda: plots.plot_updown_bias(ds, variable=var)[0], slot=slot, source="plot_updown_bias", optional=True)
+    return _slots.render_panel(lambda: plots.plot_updown_bias(ds, variable=var)[0], slot=slot, source="plot_updown_bias", optional=True)
 
 
-def temporal_drift(ds: xr.Dataset, var: str, slot: str = "full") -> str | None:
+def temporal_drift(ds: xr.Dataset, var: str, slot: str = "full") -> str | Stub | None:
     """Render the temporal-drift panel for *var*."""
-    return _slots.render(lambda: plots.check_temporal_drift(ds, variable=var)[0], slot=slot, source="check_temporal_drift", optional=True)
+    return _slots.render_panel(lambda: plots.check_temporal_drift(ds, variable=var)[0], slot=slot, source="check_temporal_drift", optional=True)
 
 
-def global_range(ds: xr.Dataset, var: str, slot: str = "half") -> str | None:
+def global_range(ds: xr.Dataset, var: str, slot: str = "half") -> str | Stub | None:
     """Render the global-range histogram for *var*, using its qc.configs suspect span as the range.
 
     The plotter's default range is oxygen-shaped (−5..600); using the per-variable suspect span puts
@@ -92,7 +95,7 @@ def global_range(ds: xr.Dataset, var: str, slot: str = "half") -> str | None:
     """
     span = qc.configs.get(var, {}).get("gross_range_test", {}).get("suspect_span")
     kw = {"min_val": span[0], "max_val": span[1]} if span else {}
-    return _slots.render(
+    return _slots.render_panel(
         lambda: plots.plot_global_range(ds, variable=var, **kw)[0],
         slot=slot,
         source="plot_global_range",
@@ -100,32 +103,34 @@ def global_range(ds: xr.Dataset, var: str, slot: str = "half") -> str | None:
     )
 
 
-def sampling_period_var(ds: xr.Dataset, var: str, slot: str = "half") -> str | None:
+def sampling_period_var(ds: xr.Dataset, var: str, slot: str = "half") -> str | Stub | None:
     """Render the per-variable sampling-period panel for *var* (plotter returns the axes)."""
     return _slots.render(
         lambda: plots.plot_sampling_period(ds, variable=var)[0].get_figure(), slot=slot, source="plot_sampling_period", optional=True
+    return _slots.render_panel(
+        lambda: plots.plot_sampling_period(ds, variable=var).get_figure(), slot=slot, source="plot_sampling_period", optional=True
     )
 
 
-def daynight(ds: xr.Dataset, var: str, slot: str = "half") -> str | None:
+def daynight(ds: xr.Dataset, var: str, slot: str = "half") -> str | Stub | None:
     """Render the day/night average panel for *var*."""
-    return _slots.render(lambda: plots.plot_daynight_avg(ds, variable=var)[0], slot=slot, source="plot_daynight_avg", optional=True)
+    return _slots.render_panel(lambda: plots.plot_daynight_avg(ds, variable=var)[0], slot=slot, source="plot_daynight_avg", optional=True)
 
 
-def quench(ds: xr.Dataset, var: str, slot: str = "full") -> str | None:
+def quench(ds: xr.Dataset, var: str, slot: str = "full") -> str | Stub | None:
     """Render the chlorophyll quenching-assessment panel for *var*."""
-    return _slots.render(lambda: plots.plot_quench_assess(ds, var)[0], slot=slot, source="plot_quench_assess", optional=True)
+    return _slots.render_panel(lambda: plots.plot_quench_assess(ds, var)[0], slot=slot, source="plot_quench_assess", optional=True)
 
 
-def process_optics(ds: xr.Dataset, var: str, slot: str = "half") -> str | None:
+def process_optics(ds: xr.Dataset, var: str, slot: str = "half") -> str | Stub | None:
     """Render the optics-assessment panel (deep drift and negatives) for *var*."""
-    return _slots.render(lambda: plots.process_optics_assess(ds, variable=var)[0], slot=slot, source="process_optics_assess", optional=True)
+    return _slots.render_panel(lambda: plots.process_optics_assess(ds, variable=var)[0], slot=slot, source="process_optics_assess", optional=True)
 
 
 # --- flight (vertical velocity) ----------------------------------------------------------------
 
 
-def vertical_speeds(ds: xr.Dataset, slot: str = "full") -> str | None:
+def vertical_speeds(ds: xr.Dataset, slot: str = "full") -> str | Stub | None:
     """Render the vertical-speeds + histograms panel.
 
     The plotter needs the measured dz/dt velocity (``GLIDER_VERT_VELO_DZDT``), the glider
@@ -135,7 +140,7 @@ def vertical_speeds(ds: xr.Dataset, slot: str = "full") -> str | None:
     gated (in ``PAGES``/``_VAR_FIGURE_PANELS``) on ``GLIDER_VERT_VELO_MODEL``, which both calcs need,
     so it drops out for datasets without the flight-model velocity.
     """
-    return _slots.render(
+    return _slots.render_panel(
         lambda: plots.plot_vertical_speeds_with_histograms(tools.calc_w_sw(tools.calc_w_meas(ds)))[0],
         slot=slot,
         source="plot_vertical_speeds_with_histograms",
@@ -146,7 +151,7 @@ def vertical_speeds(ds: xr.Dataset, slot: str = "full") -> str | None:
 # --- mixed layer (convective resistance) -------------------------------------------------------
 
 
-def convective_resistance(ds: xr.Dataset, slot: str = "full") -> str | None:
+def convective_resistance(ds: xr.Dataset, slot: str = "full") -> str | Stub | None:
     """Render the convective-resistance (mixed-layer) panel for the deepest profile.
 
     Picks the profile reaching the greatest ``DEPTH`` — deterministic, and CR is most meaningful on
@@ -172,4 +177,4 @@ def convective_resistance(ds: xr.Dataset, slot: str = "full") -> str | None:
             return None  # no computable CR on the deepest profile -> drop the panel
         return plots.plot_CR(ds2, profile_num=rep)[0]
 
-    return _slots.render(draw, slot=slot, source="plot_CR", optional=True)
+    return _slots.render_panel(draw, slot=slot, source="plot_CR", optional=True)

@@ -105,16 +105,18 @@ def render_b64(
     /,
     *args: Any,  # noqa: ANN401  # forwarded verbatim to *draw*
     optional: bool = False,
+    on_error: Callable[[BaseException], None] | None = None,
     **kwargs: Any,  # noqa: ANN401  # forwarded verbatim to *draw*
 ) -> str | None:
     """Encode *draw* via the vendored encoder; when debug is on, record its geometry.
 
-    Drop-in for :func:`glidertest.reports._encode.render_b64`. When disabled, delegates
-    straight through (zero overhead). When enabled, wraps *draw* to capture the Figure it
-    returns, then records the figsize/png_px under the returned base64 PNG.
+    Drop-in for :func:`glidertest.reports._encode.render_b64`, and names ``on_error`` explicitly
+    (rather than letting it ride in ``**kwargs``) so it reaches the encoder, not *draw* — the
+    signatures match. When disabled, delegates straight through (zero overhead). When enabled, wraps
+    *draw* to capture the Figure it returns, then records the figsize/png_px under the base64 PNG.
     """
     if not enabled():
-        return _encode.render_b64(draw, *args, optional=optional, **kwargs)
+        return _encode.render_b64(draw, *args, optional=optional, on_error=on_error, **kwargs)
 
     captured: dict[str, Any] = {}
 
@@ -126,6 +128,6 @@ def render_b64(
         captured["fig"] = fig
         return fig
 
-    b64 = _encode.render_b64(_wrapped, *args, optional=optional, **kwargs)
+    b64 = _encode.render_b64(_wrapped, *args, optional=optional, on_error=on_error, **kwargs)
     record(b64, _draw_name(draw), captured.get("fig"))
     return b64

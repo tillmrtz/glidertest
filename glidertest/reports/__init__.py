@@ -9,6 +9,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from ._manifest import validate_nav
+
 if TYPE_CHECKING:
     import xarray as xr
 
@@ -43,15 +45,25 @@ def _build_nav(pages: list[Page], current: Page, source_name: str, *, back: bool
         for key, label in _NAV_ROWS
         if (group := [p for p in pages if p.nav_group == key])
     ]
+    # Inventory pills render as .file-pill, not .nav-<role>, so their role is cosmetic — but
+    # validate_nav checks every pill's role against ROLE_ACCENT, so use a valid key ("component",
+    # as ctdcast's _navs.py does) rather than the inventory Page's own "inventory" role.
     inventory = [
-        {**pill(p), "label": source_name} for p in pages if p.nav_group == "inventory"
+        {**pill(p), "label": source_name, "role": "component"}
+        for p in pages
+        if p.nav_group == "inventory"
     ]
-    back_pill = (
+    up_pill = (
         {"label": "← All missions", "href": "../index.html", "role": "up", "state": "link"}
         if back
         else None
     )
-    return {"rows": rows, "back": back_pill, "inventory": inventory}
+    # The up-link renders as a breadcrumb above the masthead (base.html topbar), not as an inline
+    # nav pill, so it goes under "up", not "back" — the vendored page_nav draws "back" in the first
+    # row, which we don't want. "back" stays None so page_nav omits it.
+    nav = {"rows": rows, "back": None, "inventory": inventory, "up": up_pill}
+    validate_nav(nav)  # fail loudly at build time on a malformed nav (bad role/state, >1 current)
+    return nav
 
 
 def resolve_mission_id(ds: xr.Dataset | None, mission_id: str | None = None) -> str:
@@ -204,7 +216,7 @@ def report(
     generated_at = datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC")
     common = {
         "css": SHARED_CSS,
-        "header": header_card(ds),
+        "header": header_card(ds, facts=ctx.facts),
         "mission_id": mid,
         "source_name": source_name,
         "version": __version__,
@@ -223,7 +235,7 @@ def report(
         _figdebug.clear()
         for page in pages:
             slug = page.filename.rsplit(".", 1)[0]
-            resolved = build(ds, page.profile)
+            resolved = build(ds, page.profile, ctx=ctx)
             for section in resolved.sections:
                 for panel in section.panels:
                     if panel.kind == "figure" and panel.payload is not None:
@@ -239,6 +251,7 @@ def report(
                 page_title=page.title,
                 page_type=page.type_label,
                 page_landing=page.role == "landing",
+                page_intro=(page.lead(ctx) if page.lead else ""),
                 **common,
             )
             # page has ✓/✗/⚠/– glyphs; Windows default is cp1252
@@ -252,6 +265,7 @@ def report(
             pages=[(p.filename, p.title) for p in pages],
             version=__version__,
             generated_at=generated_at,
+            facts=ctx.facts,
         )
         existing.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
 
