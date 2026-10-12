@@ -1,6 +1,5 @@
 import os
 import warnings
-
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 import cmocean.cm as cmo
@@ -13,9 +12,8 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import xarray as xr
-from matplotlib.dates import DateFormatter
 from matplotlib.colors import LogNorm
-from matplotlib.ticker import FormatStrFormatter, MaxNLocator, LogLocator
+from matplotlib.ticker import FormatStrFormatter
 from scipy import stats
 from scipy.interpolate import interp1d
 from matplotlib.ticker import MaxNLocator

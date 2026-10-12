@@ -45,7 +45,6 @@ dependencies = [
   "seaborn",
   "sgp4>=2.14",
   "skyfield",
-  "tqdm",
   "xarray",
 ]
 optional-dependencies.dev = [
