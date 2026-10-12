@@ -106,7 +106,7 @@ def global_range(ds: xr.Dataset, var: str, slot: str = "half") -> str | Stub | N
 def sampling_period_var(ds: xr.Dataset, var: str, slot: str = "half") -> str | Stub | None:
     """Render the per-variable sampling-period panel for *var* (plotter returns the axes)."""
     return _slots.render_panel(
-        lambda: plots.plot_sampling_period(ds, variable=var).get_figure(), slot=slot, source="plot_sampling_period", optional=True
+        lambda: plots.plot_sampling_period(ds, variable=var)[0].get_figure(), slot=slot, source="plot_sampling_period", optional=True
     )
 
 
